@@ -1,0 +1,12 @@
+# Deploy: npm i -g wrangler && cd proxy-worker && wrangler login
+# wrangler secret put GROQ_API_KEY
+# Optional: wrangler secret put PROXY_SECRET
+# wrangler deploy
+
+name = "comptia-ai-proxy"
+main = "src/index.js"
+compatibility_date = "2024-11-01"
+
+# Default Groq model (override in dashboard or add [vars] GROQ_MODEL = "..." )
+[vars]
+GROQ_MODEL = "llama-3.1-8b-instant"

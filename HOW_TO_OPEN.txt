@@ -1,0 +1,36 @@
+CompTIA A+ Study Tool — split layout
+=====================================
+
+Files:
+  index.html  — page structure
+  styles.css  — all styles
+  app.js      — logic, question bank, notes, API calls
+
+How to run:
+  Double-click index.html, or open it from your browser (File > Open).
+
+  By default the app uses the built-in question bank only. For free live
+  questions on Wi-Fi or mobile data, deploy the Cloudflare worker in
+  proxy-worker/ (see PROXY_SETUP.txt), paste the worker URL into the app,
+  then turn on "AI variety".
+
+  Keep index.html, styles.css, and app.js in the same folder. If you move
+  the HTML file without the other two, styles and scripts will not load.
+
+Phone (Android / iPhone):
+  - Copy all THREE files into ONE folder (e.g. Downloads/comptia-quiz/).
+    Zipping the folder on your PC, copying the zip, then extracting on the
+    phone avoids losing files in the wrong directory.
+  - Open index.html with Chrome, Firefox, or Safari — not a minimal "HTML
+    only" or document viewer app; those often skip CSS and JavaScript.
+  - If you see plain unstyled text or tabs do nothing, the phone is not
+    loading styles.css / app.js from the same folder, or it blocks file://
+    scripts. Fix: put the folder on free static hosting and open the
+    https:// URL on your phone (same as "optional local server" but public).
+
+Optional local server (if a browser blocks file:// for some feature):
+  From this folder in a terminal:
+    npx --yes serve .
+  Then open the URL shown (usually http://localhost:3000).
+
+Source: split from comptia-quiz-v2 (2).html in Downloads.

@@ -1,0 +1,57 @@
+CompTIA study tool — FREE AI proxy (Cloudflare Worker + Groq)
+=============================================================
+
+What you get
+  - Your phone (or PC) opens the study HTML as usual.
+  - When "AI variety" is ON and you saved the Worker URL, questions go:
+    Browser → YOUR Worker (Cloudflare free tier) → Groq free API.
+  - Your Groq API key never lives in the HTML file — only on Cloudflare.
+
+Part A — Groq (free tier)
+-------------------------
+  1. Create an account at https://console.groq.com
+  2. Create an API key (free usage limits apply — fine for personal study).
+  3. Keep the key private; you will paste it only into Cloudflare as a secret.
+
+Part B — Cloudflare Worker
+--------------------------
+  1. Create a free Cloudflare account: https://dash.cloudflare.com
+  2. Install Wrangler CLI (needs Node.js):
+       npm install -g wrangler
+  3. In a terminal:
+       cd proxy-worker
+       wrangler login
+       wrangler secret put GROQ_API_KEY
+         (paste your Groq key when prompted)
+     Optional — shared password so random people cannot use your worker:
+       wrangler secret put PROXY_SECRET
+         (choose a random string; same value goes in the study app "Shared secret" field)
+  4. Deploy:
+       wrangler deploy
+  5. Copy the printed URL, e.g.
+       https://comptia-ai-proxy.your-subdomain.workers.dev
+
+Part C — Study app on your phone
+--------------------------------
+  1. Open index.html (hosted or copied to the phone).
+  2. Expand "AI proxy (free — Cloudflare + Groq)".
+  3. Paste the Worker URL → Save proxy settings.
+  4. If you set PROXY_SECRET on the worker, paste the same string in Shared secret → Save.
+  5. Turn ON "AI variety".
+  6. Start a quiz or mock exam on Wi‑Fi or mobile data.
+
+Changing the Groq model
+-----------------------
+  In wrangler.toml, edit [vars] GROQ_MODEL (see Groq docs for current model IDs),
+  then run: wrangler deploy
+
+Troubleshooting
+---------------
+  - 401 Unauthorized: worker has PROXY_SECRET but app field is wrong or empty.
+  - 502 from worker: bad Groq key, quota exceeded, or invalid model name.
+  - Questions still from bank: AI variety off, or Worker URL not saved, or offline.
+
+Notes
+-----
+  - Free tiers can change; this is for personal study, not production at scale.
+  - Do not share your Worker URL publicly if you did not set PROXY_SECRET.

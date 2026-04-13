@@ -1,0 +1,399 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+  <title>CompTIA A+ Study Tool</title>
+  <link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Barlow:wght@400;600;700;800&family=Barlow+Condensed:wght@700;800;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="./styles.css" onerror="this.onerror=null;var m=document.getElementById('asset-load-msg');if(m){m.style.display='block';m.textContent='Could not load styles.css — keep index.html, styles.css, and app.js in the same folder, or open via https:// (see HOW_TO_OPEN.txt).';}">
+</head>
+<body>
+<div id="asset-load-msg" style="display:none;padding:12px 14px;background:#450a0a;color:#fecaca;border-bottom:2px solid #b91c1c;font:13px/1.45 system-ui,sans-serif;" role="alert"></div>
+<div class="scan"></div>
+<div class="save-flash" id="save-flash">✓ Progress saved</div>
+<div id="app">
+
+<!-- HEADER -->
+<div class="hdr">
+  <div>
+    <div style="display:flex;align-items:center;gap:8px;margin-bottom:2px">
+      <span class="badge">220-1201/1202</span>
+      <span class="logo-txt">CompTIA A+</span>
+    </div>
+    <div class="logo-sub">STUDY TOOL // MODULES 1–6</div>
+  </div>
+  <div class="score-bar" id="score-display" style="display:none">
+    <div class="sc-item"><div class="sc-num c" id="sc-correct">0</div><div class="sc-lbl">Correct</div></div>
+    <div class="sc-div"></div>
+    <div class="sc-item"><div class="sc-num w" id="sc-wrong">0</div><div class="sc-lbl">Wrong</div></div>
+    <div class="sc-div"></div>
+    <div class="sc-item"><div class="sc-num p" id="sc-pct">—</div><div class="sc-lbl">Score</div></div>
+  </div>
+</div>
+
+<!-- NAV TABS -->
+<div class="nav-tabs">
+  <button class="nav-tab active" id="tab-quiz" onclick="switchTab('quiz')"><span class="tab-icon">🧠</span> Quiz</button>
+  <button class="nav-tab fc-tab" id="tab-fc" onclick="switchTab('fc')"><span class="tab-icon">🃏</span> Flashcards</button>
+  <button class="nav-tab exam-tab" id="tab-exam" onclick="switchTab('exam')"><span class="tab-icon">📋</span> Mock Exam</button>
+</div>
+
+<!-- ═══ QUIZ SCREENS ═══ -->
+<div id="quiz-pane">
+
+  <!-- MODULE SELECT -->
+  <div id="s-module" class="screen active">
+    <div class="mode-row">
+      <div id="mode-indicator"></div>
+      <label class="ai-toggle" title="Off by default: quizzes and mock exams use the built-in bank only. Turn on to try live AI questions when you are online.">
+        <input type="checkbox" id="ai-variety-toggle" />
+        <span>AI variety</span>
+      </label>
+    </div>
+    <details class="proxy-settings" id="proxy-settings">
+      <summary>AI proxy (free — Cloudflare + Groq)</summary>
+      <p class="proxy-help">One-time setup: deploy the worker in <code>proxy-worker/</code>, copy its <code>https://…workers.dev</code> URL here, save, then turn on <strong>AI variety</strong>. Works on phone over Wi‑Fi or mobile data. See <code>PROXY_SETUP.txt</code>.</p>
+      <label class="proxy-label">Worker URL</label>
+      <input type="url" class="proxy-input" id="proxy-url" placeholder="https://comptia-ai-proxy.your-account.workers.dev" autocomplete="url" />
+      <label class="proxy-label">Shared secret (optional, must match worker)</label>
+      <input type="password" class="proxy-input" id="proxy-secret" placeholder="Leave blank if worker has no PROXY_SECRET" autocomplete="new-password" />
+      <button type="button" class="proxy-save-btn" onclick="saveProxySettings()">Save proxy settings</button>
+      <span class="proxy-save-msg" id="proxy-save-msg"></span>
+    </details>
+    <div id="quiz-resume-banner"></div>
+    <div id="quiz-stats-panel"></div>
+    <div class="screen-title">Select a Module</div>
+    <div class="screen-sub">Choose which module to quiz, or study everything at once.</div>
+    <div class="module-grid">
+      <div class="module-card all-m" data-mod="all" onclick="selectModule('all')">
+        <div class="mod-glow all-glow"></div>
+        <div class="mod-num all-c">ALL MODULES</div>
+        <div class="mod-name">Complete Course</div>
+        <div class="mod-desc">Covers everything from Mobile Devices to Networking</div>
+        <div class="mod-count">220-1201 + 220-1202 • 77 SECTIONS</div>
+      </div>
+      <div class="mod-group-label">📘 Core 1 — 220-1201</div>
+      <div class="module-card m1" data-mod="mod1" onclick="selectModule('mod1')">
+        <div class="mod-glow m1-glow"></div>
+        <div class="core-badge core1-badge">CORE 1 — 220-1201</div>
+        <div class="mod-num m1-c">MODULE 1</div>
+        <div class="mod-name">Mobile Devices</div>
+        <div class="mod-desc">Hardware, OS, connectivity, troubleshooting &amp; security</div>
+        <div class="mod-count">8 SECTIONS</div>
+      </div>
+      <div class="module-card m2" data-mod="mod2" onclick="selectModule('mod2')">
+        <div class="mod-glow m2-glow"></div>
+        <div class="core-badge core1-badge">CORE 1 — 220-1201</div>
+        <div class="mod-num m2-c">MODULE 2</div>
+        <div class="mod-name">Networking</div>
+        <div class="mod-desc">Architecture, protocols, devices, commands &amp; troubleshooting</div>
+        <div class="mod-count">13 SECTIONS</div>
+      </div>
+      <div class="module-card m3" data-mod="mod3" onclick="selectModule('mod3')">
+        <div class="mod-glow m3-glow"></div>
+        <div class="core-badge core1-badge">CORE 1 — 220-1201</div>
+        <div class="mod-num m3-c">MODULE 3</div>
+        <div class="mod-name">Hardware</div>
+        <div class="mod-desc">Displays, cables, storage, CPUs, motherboards, PSUs &amp; printers</div>
+        <div class="mod-count">12 SECTIONS</div>
+      </div>
+      <div class="mod-group-label">📗 Core 2 — 220-1202</div>
+      <div class="module-card m4" data-mod="mod4" onclick="selectModule('mod4')">
+        <div class="mod-glow m4-glow"></div>
+        <div class="core-badge core2-badge">CORE 2 — 220-1202</div>
+        <div class="mod-num m4-c">MODULE 4</div>
+        <div class="mod-name">Operating Systems</div>
+        <div class="mod-desc">Windows, macOS, Linux, tools, settings &amp; app installation</div>
+        <div class="mod-count">21 SECTIONS</div>
+      </div>
+      <div class="module-card m5" data-mod="mod5" onclick="selectModule('mod5')">
+        <div class="mod-glow m5-glow"></div>
+        <div class="core-badge core1-badge">CORE 1 — 220-1201</div>
+        <div class="mod-num m5-c">MODULE 5</div>
+        <div class="mod-name">Virtualization &amp; Cloud</div>
+        <div class="mod-desc">VMs, hypervisors, cloud models, services &amp; productivity tools</div>
+        <div class="mod-count">3 SECTIONS</div>
+      </div>
+      <div class="module-card m6" data-mod="mod6" onclick="selectModule('mod6')">
+        <div class="mod-glow m6-glow"></div>
+        <div class="core-badge core2-badge">CORE 2 — 220-1202</div>
+        <div class="mod-num m6-c">MODULE 6</div>
+        <div class="mod-name">Security</div>
+        <div class="mod-desc">Physical, logical, malware, encryption, threats &amp; browser security</div>
+        <div class="mod-count">20 SECTIONS</div>
+      </div>
+    </div>
+    <button class="start-btn" id="mod-next-btn" disabled onclick="goToSections()">CHOOSE SECTIONS →</button>
+  </div>
+
+  <!-- SECTION SELECT (QUIZ) -->
+  <div id="s-section" class="screen">
+    <button class="back-btn" onclick="goBack('s-module')">← BACK</button>
+    <div class="screen-title" id="sec-screen-title">Choose a Section</div>
+    <div class="screen-sub">Pick a specific topic or quiz all sections.</div>
+    <div class="sections-grid" id="sections-grid"></div>
+    <button class="start-btn" id="start-btn" disabled onclick="startQuiz()">START QUIZ →</button>
+  </div>
+
+  <!-- QUIZ -->
+  <div id="s-quiz" class="screen">
+    <div class="quiz-meta">
+      <span class="cur-sec-tag" id="cur-sec-tag">—</span>
+      <span class="q-counter" id="q-counter">Question 1 of 20</span>
+    </div>
+    <div class="prog-wrap">
+      <div class="prog-lbl"><span>Progress</span><span id="prog-txt">0 / 20</span></div>
+      <div class="prog-track"><div class="prog-fill" id="prog-fill" style="width:0%"></div></div>
+    </div>
+    <div id="q-area"></div>
+  </div>
+
+  <!-- FINAL -->
+  <div id="s-final" class="screen">
+    <div class="final-card">
+      <div class="final-grade" id="final-grade">A</div>
+      <div class="final-pct" id="final-pct">0%</div>
+      <div class="final-stats">
+        <div class="sc-item"><div class="f-stat-num" style="color:var(--green)" id="f-correct">0</div><div class="sc-lbl">Correct</div></div>
+        <div class="sc-item"><div class="f-stat-num" style="color:var(--red)" id="f-wrong">0</div><div class="sc-lbl">Wrong</div></div>
+        <div class="sc-item"><div class="f-stat-num" style="color:var(--accent)" id="f-total">0</div><div class="sc-lbl">Total</div></div>
+      </div>
+      <div class="final-fb" id="final-fb"></div>
+      <button class="restart-btn" onclick="resetToMenu()">TRY AGAIN →</button>
+    </div>
+  </div>
+
+</div><!-- /quiz-pane -->
+
+<!-- ═══ FLASHCARD SCREENS ═══ -->
+<div id="fc-pane" style="display:none">
+
+  <!-- FC MODULE SELECT -->
+  <div id="fc-s-module" class="screen active">
+    <div id="fc-resume-banner"></div>
+    <div id="fc-stats-panel"></div>
+    <div class="screen-title" style="background:linear-gradient(135deg,#fff 0%,var(--yellow) 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;">Flashcard Decks</div>
+    <div class="screen-sub">Choose a module to start reviewing key terms and definitions.</div>
+    <div class="module-grid">
+      <div class="module-card all-m" data-fcmod="all" onclick="selectFCModule('all')">
+        <div class="mod-glow all-glow"></div>
+        <div class="mod-num all-c">ALL MODULES</div>
+        <div class="mod-name">Full Deck</div>
+        <div class="mod-desc">Every key term across Mobile Devices &amp; Networking</div>
+        <div class="mod-count">220-1201 + 220-1202 • 730+ CARDS</div>
+      </div>
+      <div class="mod-group-label">📘 Core 1 — 220-1201</div>
+      <div class="module-card m1" data-fcmod="mod1" onclick="selectFCModule('mod1')">
+        <div class="mod-glow m1-glow"></div>
+        <div class="core-badge core1-badge">CORE 1 — 220-1201</div>
+        <div class="mod-num m1-c">MODULE 1</div>
+        <div class="mod-name">Mobile Devices</div>
+        <div class="mod-desc">Hardware, OS, connections, troubleshooting &amp; security</div>
+        <div class="mod-count">~80 CARDS • 8 SECTIONS</div>
+      </div>
+      <div class="module-card m2" data-fcmod="mod2" onclick="selectFCModule('mod2')">
+        <div class="mod-glow m2-glow"></div>
+        <div class="core-badge core1-badge">CORE 1 — 220-1201</div>
+        <div class="mod-num m2-c">MODULE 2</div>
+        <div class="mod-name">Networking</div>
+        <div class="mod-desc">Architecture, protocols, devices, tools &amp; commands</div>
+        <div class="mod-count">~100 CARDS • 13 SECTIONS</div>
+      </div>
+      <div class="module-card m3" data-fcmod="mod3" onclick="selectFCModule('mod3')">
+        <div class="mod-glow m3-glow"></div>
+        <div class="core-badge core1-badge">CORE 1 — 220-1201</div>
+        <div class="mod-num m3-c">MODULE 3</div>
+        <div class="mod-name">Hardware</div>
+        <div class="mod-desc">Displays, cables, storage, CPUs, PSUs &amp; printers</div>
+        <div class="mod-count">~120 CARDS • 12 SECTIONS</div>
+      </div>
+      <div class="mod-group-label">📗 Core 2 — 220-1202</div>
+      <div class="module-card m4" data-fcmod="mod4" onclick="selectFCModule('mod4')">
+        <div class="mod-glow m4-glow"></div>
+        <div class="core-badge core2-badge">CORE 2 — 220-1202</div>
+        <div class="mod-num m4-c">MODULE 4</div>
+        <div class="mod-name">Operating Systems</div>
+        <div class="mod-desc">Windows, macOS, Linux, tools, settings &amp; app installation</div>
+        <div class="mod-count">~210 CARDS • 21 SECTIONS</div>
+      </div>
+      <div class="module-card m5" data-fcmod="mod5" onclick="selectFCModule('mod5')">
+        <div class="mod-glow m5-glow"></div>
+        <div class="core-badge core1-badge">CORE 1 — 220-1201</div>
+        <div class="mod-num m5-c">MODULE 5</div>
+        <div class="mod-name">Virtualization &amp; Cloud</div>
+        <div class="mod-desc">VMs, hypervisors, cloud models, services &amp; productivity tools</div>
+        <div class="mod-count">~30 CARDS • 3 SECTIONS</div>
+      </div>
+      <div class="module-card m6" data-fcmod="mod6" onclick="selectFCModule('mod6')">
+        <div class="mod-glow m6-glow"></div>
+        <div class="core-badge core2-badge">CORE 2 — 220-1202</div>
+        <div class="mod-num m6-c">MODULE 6</div>
+        <div class="mod-name">Security</div>
+        <div class="mod-desc">Physical, logical, malware, encryption, threats &amp; browser security</div>
+        <div class="mod-count">~200 CARDS • 20 SECTIONS</div>
+      </div>
+    </div>
+    <button class="start-btn fc-start-btn" id="fc-mod-next-btn" disabled onclick="goToFCSections()">CHOOSE DECK →</button>
+  </div>
+
+  <!-- FC SECTION SELECT -->
+  <div id="fc-s-section" class="screen">
+    <button class="back-btn" onclick="goBackFC('fc-s-module')">← BACK</button>
+    <div class="screen-title" id="fc-sec-title" style="background:linear-gradient(135deg,#fff 0%,var(--yellow) 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;">Choose a Deck</div>
+    <div class="screen-sub">Select a section or study the full module.</div>
+    <div class="sections-grid" id="fc-sections-grid"></div>
+    <button class="start-btn fc-start-btn" id="fc-start-btn" disabled onclick="startFlashcards()">STUDY DECK →</button>
+  </div>
+
+  <!-- FC STUDY -->
+  <div id="fc-s-study" class="screen">
+    <button class="back-btn" onclick="goBackFC('fc-s-section')">← BACK</button>
+    <div class="fc-meta">
+      <span class="cur-sec-tag" id="fc-sec-tag" style="border-color:rgba(255,187,0,.3);color:var(--yellow);background:rgba(255,187,0,.07);">—</span>
+      <div class="fc-counters">
+        <span class="fc-count-item known">✓ <span id="fc-known-count">0</span></span>
+        <span class="fc-count-item learning">↩ <span id="fc-learning-count">0</span></span>
+        <span style="font-family:'Share Tech Mono',monospace;font-size:11px;color:var(--muted);" id="fc-card-num">1 / 20</span>
+      </div>
+    </div>
+    <div class="prog-wrap">
+      <div class="prog-lbl"><span style="font-size:11px;color:var(--muted);font-family:'Share Tech Mono',monospace;">Progress</span><span id="fc-prog-txt" style="font-size:11px;color:var(--muted);font-family:'Share Tech Mono',monospace;">0%</span></div>
+      <div class="prog-track" style="position:relative;">
+        <div class="fc-prog-fill prog-fill" id="fc-prog-fill" style="width:0%"></div>
+        <div style="position:absolute;top:0;left:20%;width:2px;height:100%;background:rgba(255,187,0,.4);border-radius:2px;"></div>
+        <div style="position:absolute;top:0;left:40%;width:2px;height:100%;background:rgba(255,187,0,.4);border-radius:2px;"></div>
+        <div style="position:absolute;top:0;left:60%;width:2px;height:100%;background:rgba(255,187,0,.4);border-radius:2px;"></div>
+        <div style="position:absolute;top:0;left:80%;width:2px;height:100%;background:rgba(255,187,0,.4);border-radius:2px;"></div>
+      </div>
+    </div>
+
+    <div class="flip-container" onclick="flipCard()" id="flip-container">
+      <div class="flip-card" id="flip-card">
+        <div class="fc-face fc-front" id="fc-front">
+          <div class="fc-num" id="fc-card-num2"></div>
+          <div class="fc-section-label" id="fc-front-section"></div>
+          <div class="fc-term" id="fc-term">Term</div>
+          <div class="fc-hint">TAP TO REVEAL DEFINITION</div>
+        </div>
+        <div class="fc-face fc-back" id="fc-back">
+          <div class="fc-section-label" id="fc-back-section"></div>
+          <div class="fc-def" id="fc-def">Definition</div>
+          <div class="fc-hint">TAP TO FLIP BACK</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="verdict-hint" id="verdict-hint">Flip the card to see the definition, then rate yourself</div>
+    <div class="fc-verdict" id="fc-verdict" style="display:none">
+      <button class="fc-known-btn" onclick="markCard('known')">✓ Know It</button>
+      <button class="fc-learning-btn" onclick="markCard('learning')">↩ Still Learning</button>
+    </div>
+
+    <div class="fc-controls">
+      <button class="fc-btn fc-prev" id="fc-prev-btn" onclick="fcPrev()" disabled>← Prev</button>
+      <button class="fc-btn fc-flip-btn" onclick="flipCard()">↕ Flip</button>
+      <button class="fc-btn fc-next" id="fc-next-btn" onclick="fcNext()">Next →</button>
+    </div>
+  </div>
+
+  <!-- FC COMPLETE -->
+  <div id="fc-s-complete" class="screen">
+    <div class="fc-complete-card">
+      <div class="fc-complete-icon">🎉</div>
+      <div class="fc-complete-title">Deck Complete!</div>
+      <div class="fc-complete-sub">You've gone through all the cards in this deck.</div>
+      <div class="fc-complete-stats">
+        <div class="sc-item"><div class="f-stat-num" style="color:var(--green)" id="fc-final-known">0</div><div class="sc-lbl">Know It</div></div>
+        <div class="sc-item"><div class="f-stat-num" style="color:var(--yellow)" id="fc-final-learning">0</div><div class="sc-lbl">Still Learning</div></div>
+        <div class="sc-item"><div class="f-stat-num" style="color:var(--accent)" id="fc-final-total">0</div><div class="sc-lbl">Total</div></div>
+      </div>
+      <div class="final-fb" id="fc-final-fb"></div>
+      <button class="fc-review-btn" id="fc-review-btn" onclick="reviewLearning()">Review Still Learning ↩</button>
+      <button class="restart-btn" onclick="resetFCToMenu()">NEW DECK →</button>
+    </div>
+  </div>
+
+
+</div><!-- /fc-pane -->
+
+<!-- ═══ EXAM PANE ═══ -->
+<div id="exam-pane" style="display:none;">
+
+  <!-- EXAM HOME -->
+  <div id="ex-home" class="screen active">
+    <div class="screen-title">Mock Exam</div>
+    <div class="screen-sub" style="margin-bottom:24px;">Timed exam simulation • 50 questions • CompTIA A+ style</div>
+    <div id="ex-mode-badge" style="text-align:center;margin-bottom:16px;font-family:'Share Tech Mono',monospace;font-size:12px;color:var(--muted);">🤖 Online: AI generates a unique question every time &nbsp;|&nbsp; 📦 Offline: uses question bank</div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:24px;">
+      <div class="exam-choice-card" id="ex-card-1" onclick="selectExam('core1')">
+        <div class="exam-choice-num" style="color:#00bfff;">220-1201</div>
+        <div class="exam-choice-title">Core 1</div>
+        <div class="exam-choice-sub">Mobile, Networking,<br>Hardware, Virtualization</div>
+        <div class="exam-choice-pass">Pass mark: 675 / 900</div>
+      </div>
+      <div class="exam-choice-card" id="ex-card-2" onclick="selectExam('core2')">
+        <div class="exam-choice-num" style="color:#c084fc;">220-1202</div>
+        <div class="exam-choice-title">Core 2</div>
+        <div class="exam-choice-sub">OS, Security,<br>Software, Operational</div>
+        <div class="exam-choice-pass">Pass mark: 700 / 900</div>
+      </div>
+    </div>
+    <div id="ex-selected-label" style="text-align:center;font-family:'Share Tech Mono',monospace;font-size:13px;color:var(--muted);margin-bottom:20px;min-height:20px;"></div>
+    <div style="background:rgba(255,255,255,.03);border:1px solid var(--border);border-radius:12px;padding:16px;margin-bottom:24px;font-size:13px;color:var(--muted);line-height:1.7;">
+      <div style="color:var(--text);font-weight:700;font-family:'Barlow Condensed',sans-serif;font-size:16px;margin-bottom:8px;">📋 Exam Format</div>
+      50 questions drawn from all domains in the selected exam<br>
+      Questions are scenario-based, multiple choice, and drag-drop style<br>
+      No time limit (real exam is 90 min)<br>
+      Results show domain breakdown and revision guidance
+    </div>
+    <div id="ex-prev-results" style="display:none;margin-bottom:20px;"></div>
+    <button class="start-btn" id="ex-start-btn" disabled onclick="startMockExam()">START EXAM →</button>
+  </div>
+
+  <!-- EXAM IN PROGRESS -->
+  <div id="ex-quiz" class="screen">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
+      <div id="ex-q-counter" style="font-family:'Share Tech Mono',monospace;font-size:13px;color:var(--muted);">Q 1 / 50</div>
+      <div id="ex-domain-tag" style="font-family:'Share Tech Mono',monospace;font-size:11px;padding:4px 10px;border-radius:20px;border:1px solid var(--border);color:var(--muted);"></div>
+      <div id="ex-score-live" style="font-family:'Share Tech Mono',monospace;font-size:13px;color:var(--muted);">0 correct</div>
+    </div>
+    <div class="prog-lbl"><span style="font-size:11px;color:var(--muted);font-family:'Share Tech Mono',monospace;">Progress</span><span id="ex-prog-txt" style="font-size:11px;color:var(--muted);font-family:'Share Tech Mono',monospace;">0%</span></div>
+    <div class="prog-track" style="margin-bottom:20px;"><div id="ex-prog-fill" class="prog-fill" style="width:0%;background:linear-gradient(90deg,#1d4ed8,#00bfff);"></div></div>
+    <div id="ex-q-area"></div>
+  </div>
+
+  <!-- EXAM RESULTS -->
+  <div id="ex-results" class="screen">
+    <div id="ex-result-content"></div>
+  </div>
+
+</div><!-- /exam-pane -->
+
+</div><!-- /app -->
+
+  <script>
+  (function () {
+    var shown = false;
+    function show(html) {
+      if (shown) return;
+      shown = true;
+      var m = document.getElementById('asset-load-msg');
+      if (m) { m.style.display = 'block'; m.innerHTML = html; }
+    }
+    window.addEventListener('error', function (e) {
+      if (e.target && e.target.tagName === 'SCRIPT' && /app\.js(\?|#|$)/.test(String(e.target.src || ''))) {
+        show('<strong>Could not load app.js.</strong> Put <strong>all three files</strong> in <strong>one folder</strong> on your phone. Open with <strong>Chrome or Firefox</strong> (not a basic HTML viewer). If it still fails, many phones block <code>file://</code> scripts — upload this folder to free hosting (Netlify Drop, GitHub Pages) and open the <code>https://</code> link.');
+      }
+    }, true);
+    window.addEventListener('DOMContentLoaded', function () {
+      setTimeout(function () {
+        if (typeof switchTab !== 'function') {
+          show('<strong>The app did not load.</strong> Same folder + real browser still applies. Try hosting the folder online and use an <code>https://</code> URL — see HOW_TO_OPEN.txt.');
+        }
+      }, 400);
+    });
+  })();
+  </script>
+  <script src="./app.js" defer></script>
+</body>
+</html>
