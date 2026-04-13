@@ -159,6 +159,9 @@ body{background:var(--bg);color:var(--text);font-family:'Barlow',sans-serif;min-
 .load-sub{font-size:11px;color:var(--muted);opacity:.6;}
 .err-card{background:rgba(255,59,92,.07);border:1px solid rgba(255,59,92,.25);border-radius:12px;padding:18px;margin-bottom:14px;}
 .ai-fallback-banner{font-size:12px;line-height:1.45;color:#fcd34d;background:rgba(251,191,36,.1);border:1px solid rgba(251,191,36,.35);border-radius:10px;padding:10px 12px;margin-bottom:12px;}
+.ai-fallback-detail{margin-top:8px;font-family:'Share Tech Mono',monospace;font-size:11px;opacity:.95;word-break:break-word;}
+.ai-fallback-hint{margin-top:8px;font-size:11px;color:#b99b6a;line-height:1.5;}
+.ai-fallback-hint code{font-size:10px;}
 .err-msg{font-size:13px;color:var(--red);margin-bottom:10px;}
 .retry-btn{background:transparent;border:1px solid var(--red);color:var(--red);font-size:13px;padding:7px 18px;border-radius:7px;cursor:pointer;font-family:'Barlow',sans-serif;}
 
