@@ -1340,6 +1340,35 @@ const BANK = {
 ]
 };
 
+function fcQuestionDedupeKey(t) {
+  return String(t || '')
+    .toLowerCase()
+    .replace(/&[a-z]+;/gi, ' ')
+    .replace(/<[^>]+>/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim()
+    .slice(0, 200);
+}
+/** Section deck = FC_DECKS plus BANK questions not already represented (same text skipped). */
+function getMergedFlashDeck(secId) {
+  const fc = FC_DECKS[secId] || [];
+  const out = fc.map((c) => ({ ...c }));
+  const seen = new Set(out.map((c) => fcQuestionDedupeKey(c.t)));
+  const bank = BANK[secId];
+  if (bank && bank.length) {
+    for (const row of bank) {
+      const t = row.q;
+      const k = fcQuestionDedupeKey(t);
+      if (!k || seen.has(k)) continue;
+      seen.add(k);
+      let d = row.e || '';
+      if (row.sc && String(row.sc).trim()) d += `<div class="fc-bank-sc">${row.sc}</div>`;
+      out.push({ t, d, fromBank: true });
+    }
+  }
+  return out;
+}
+
 const NOTES_M1=`MODULE 1 - MOBILE DEVICES: Battery=Li-ion/LiPo/use vendor chargers. RAM=integrated/soldered mobiles/SO-DIMM laptops(DDR3=204/DDR4=260/DDR5=262). HDD=mechanical/slower. SSD=faster/durable/lower power. SATA=6Gbps. mSATA=compact/SATA speeds. NVMe=PCIe/fastest. M.2: 2230/2242/2260/2280/22110. Wireless cards=mini PCIe/M.2. Wi-Fi antenna=follow original path. Biometrics=fingerprint/facial/voice. NFC=few cm/payments. iOS=.ipa/iPhones. iPadOS=.ipa/iPads. Android=.apk/open-source/Android15=Vanilla Ice Cream. EOL=support ends. Update limits=hardware incompatible. Airplane mode=disables ALL radios. Liquid damage=DO NOT power on. Swollen battery=safety risk. Adware=excessive ads. App spoofing=verify publisher. Root/jailbreak=bypasses security. MDM=enforce policies. Android WiFi=Settings>Connections>WiFi. Android BT=Settings>Connections>Bluetooth. Android NFC=Settings>Connections>NFC and contactless payment. iOS WiFi=Settings>WiFi. iOS BT=Settings>Bluetooth. iOS Cellular=Settings>Cellular.`;
 const NOTES_M2=`MODULE 2 - NETWORKING: Ports: FTP=20/21, SSH=22, Telnet=23, SMTP=25, DNS=53, DHCP=67(server)/68(client), HTTP=80, POP3=110, IMAP=143, LDAP=389, HTTPS=443, SMB=445, RDP=3389. TCP=reliable/connection-oriented. UDP=fast/no guarantee. 802.11ax=WiFi6/9.6Gbps/all3bands. 802.11ac=WiFi5/5GHz/1.3Gbps. 802.11n=WiFi4/dual-band. 2.4GHz=3 non-overlapping channels(1/6/11). NFC=13.56MHz. Switch=MAC/L2. Router=IP/L3. PoE=802.3af=15.4W/802.3at=25.5W. MAC=48bit/OUI=first3bytes. ONT=fiber to electrical. DOCSIS=cable internet. VLAN=logical segments/managed switch. VPN: remote access=single user, site-to-site=networks. DNS: A=IPv4, AAAA=IPv6, CNAME=alias, MX=mail, SPF=authorised senders. DHCP DORA=Discover/Offer/Request/Ack. APIPA=169.254.x.x=DHCP failed. IPv4 classes: A=1-126/8, B=128-191/16, C=192-223/24. Private: 10.x, 172.16-31.x, 192.168.x. IPv6=128bit. SAN=Fibre Channel/block storage. PAN=Bluetooth/10m. ipconfig/release/renew/flushdns. tracert=route hops. pathping=hops+packet loss. nslookup=DNS. netstat -a=connections+ports. QoS=traffic prioritisation. Event Viewer=auth failures. Toner probe=trace cables. Cable tester=verify wiring. Crimper=RJ45 connectors. Loopback plug=test ports. Network tap=passive monitoring.`;
 const NOTES_M3=`MODULE 3 - HARDWARE: Displays: IPS=best colour/wide angles. TN=fastest response/gaming. VA=best contrast/deep blacks. OLED=no backlight/true black/burn-in risk. Mini-LED=local dimming/HDR. Inverter=DC to AC for CCFL backlights/failing=dim screen. PPI=pixel density. Hz=refresh rate(60/120/144/240). sRGB=web. Adobe RGB=photo. DCI-P3=HDR/cinema. Cables: USB2=480Mbps/4pin. USB3=5Gbps/9pin. Thunderbolt3/4=40Gbps/USB-C/100W. HDMI=19pin/digital audio+video/4K8K. DisplayPort=20pin/best for high refresh. DVI-D=digital. DVI-A=analogue. DVI-I=both. VGA=15pin/analogue/legacy. Molex=4pin/legacy HDD power. Lightning=8pin/Apple. DB9=9pin/legacy serial/POS. Network cables: Cat5e=1Gbps/100m. Cat6=10Gbps/55m. Cat6a=10Gbps/100m. T568B=most common. STP=shielded/EMI. UTP=standard/LAN. Direct burial=waterproof/underground. Plenum=fire-retardant/ceilings. SMF=8-10µm/100km/long distance. MMF=50-62.5µm/550m/campus. RJ11=4-6pin/phone. RJ45=8pin/Ethernet. SC=push-pull fibre. LC=small form factor fibre. Storage: HDD=5400/7200/10000RPM. 3.5in=desktop. 2.5in=laptop. NVMe=PCIe/7000MB/s. SATA3=600MB/s. SAS=12Gbps/enterprise. M.2=2230/2242/2260/2280/22110. eSATA=6Gbps/external. Blu-ray=100GB/archival. RAID0=speed/no redundancy. RAID1=mirror/1 failure. RAID5=parity/1 failure. RAID6=double parity/2 failures. RAID10=stripe+mirror/best both. Motherboards: ATX=7slots. microATX=4slots. Mini-ITX=1slot. PCIe3=1GB/lane. PCIe4=2GB/lane. PCIe5=4GB/lane. UEFI=GPT/over2TB/Secure Boot. TPM=BitLocker/Windows11. AM4=Ryzen1-5000. AM5=Ryzen7000. LGA1700=Intel12/13gen. LGA1200=Intel10gen. Thermal paste=IPA to clean. Liquid cooling=radiator/pump/water block/coolant. PSU: 110-120V=North America. 220-240V=Europe. +3.3V=RAM/chipset. +5V=USB/legacy. +12V=CPU/GPU/HDD. Modular=removable cables. Redundant PSU=hot-swap/servers. 80 PLUS: Standard=80%. Bronze=82%. Silver=85%. Gold=87%. Platinum=90%. Titanium=94%. Printers: PCL=fast/HP. PostScript=precise/Adobe/graphics. SMB scan=network folder. Secured print=hold until auth. ADF=batch scan. Fuser=bonds toner to paper. Laser maint=toner+fuser+rollers+calibrate. Inkjet maint=cartridge+printhead clean. Thermal=heat-sensitive paper/no ink. Impact=ribbon+multipart forms. Troubleshooting: POST beeps=bad RAM/GPU/board. BSOD=bad RAM/drivers. Blank screen=reseat GPU. No power=check 24-pin+8-pin. Swollen cap=replace board+UPS. CMOS reset=CR2032 battery. Click HDD=backup NOW. S.M.A.R.T. fail=replace drive. TRIM=SSD performance. No boot=check BIOS boot order. Ghosted print=fuser. Lines on page=drum/clogged nozzle. Garbled=wrong driver. Stuck queue=restart Print Spooler. Projector dim=replace lamp. Screen flicker=cable+GPU driver. Burn-in=OLED/pixel refresh.`;
@@ -1408,6 +1437,8 @@ const allCard=document.createElement('div');allCard.className='sec-card all-sec'
 secs.forEach(s=>{const card=document.createElement('div');const isM1=s.mod==='mod1';const isM3=s.mod==='mod3';const isM4=s.mod==='mod4';const isM5=s.mod==='mod5';const isM6=s.mod==='mod6';card.className=`sec-card${isM1?' m1-sec':isM3?' m3-sec':isM4?' m4-sec':isM5?' m5-sec':isM6?' m6-sec':''}`;card.dataset.secid=s.id;card.innerHTML=`<span class="sec-tag ${isM1?'m1-t':isM3?'m3-t':isM4?'m4-t':isM5?'m5-t':isM6?'m6-t':''}">${s.id}</span><span class="sec-name">${s.label}</span>`;card.onclick=()=>selectSection(s.id);grid.appendChild(card);});}
 function selectSection(id){document.querySelectorAll('.sec-card').forEach(c=>c.classList.remove('selected'));document.querySelector(`[data-secid="${id}"]`).classList.add('selected');quizState.selSection=id;document.getElementById('start-btn').disabled=false;}
 function goBack(screenId){if(screenId==='s-module'){quizState.selModule=null;quizState.selSection=null;document.querySelectorAll('.module-card').forEach(c=>c.classList.remove('selected'));document.getElementById('mod-next-btn').disabled=true;updateModeIndicator();}showQScreen(screenId);}
+/** Leave active quiz; return to module home. Progress is saved so you can resume from the banner (use Discard there to clear). */
+function exitQuizToMenu(){if(quizState.inProgress)saveQuizProgress();quizState.inProgress=false;document.getElementById('score-display').style.display='none';goBack('s-module');renderQuizResumeBanner();renderQuizStats();}
 function showQScreen(id){document.querySelectorAll('#quiz-pane .screen').forEach(s=>s.classList.remove('active'));document.getElementById(id).classList.add('active');}
 function getAllSections(){if(quizState.selModule==='all')return[...MODULES.mod1.sections.map(s=>s.id),...MODULES.mod2.sections.map(s=>s.id),...MODULES.mod3.sections.map(s=>s.id),...MODULES.mod4.sections.map(s=>s.id),...MODULES.mod5.sections.map(s=>s.id),...MODULES.mod6.sections.map(s=>s.id)];return MODULES[quizState.selModule].sections.map(s=>s.id);}
 function getCurrentSection(){if(quizState.selSection==='all')return quizState.sessionSections[quizState.currentQ]||'2.1';return quizState.selSection;}
@@ -1434,12 +1465,12 @@ let fcState = {selModule:null,selSection:null,deck:[],currentIdx:0,known:new Set
 function selectFCModule(mod){document.querySelectorAll('[data-fcmod]').forEach(c=>c.classList.remove('selected'));document.querySelector(`[data-fcmod="${mod}"]`).classList.add('selected');fcState.selModule=mod;document.getElementById('fc-mod-next-btn').disabled=false;}
 function goToFCSections(){if(!fcState.selModule)return;buildFCSectionGrid();const t={mod1:'Module 1 — Mobile Devices',mod2:'Module 2 — Networking',mod3:'Module 3 — Hardware',mod4:'Module 4 — Operating Systems',mod5:'Module 5 — Virtualization & Cloud',mod6:'Module 6 — Security',all:'All Modules'};document.getElementById('fc-sec-title').textContent=t[fcState.selModule]||'Choose a Deck';showFCScreen('fc-s-section');}
 function buildFCSectionGrid(){const grid=document.getElementById('fc-sections-grid');grid.innerHTML='';let secs=[];if(fcState.selModule==='all'){secs=[...MODULES.mod1.sections,...MODULES.mod2.sections,...MODULES.mod3.sections,...MODULES.mod4.sections,...MODULES.mod5.sections,...MODULES.mod6.sections];}else if(MODULES[fcState.selModule]){secs=MODULES[fcState.selModule].sections;}
-const allCard=document.createElement('div');allCard.className='sec-card all-sec';allCard.dataset.fcsecid='all';const selMod=fcState.selModule;const allTagClass=selMod==='mod1'?'m1-t':selMod==='mod3'?'m3-t':selMod==='mod4'?'m4-t':'';allCard.innerHTML=`<span class="sec-tag ${allTagClass}">ALL</span><span class="sec-name">Full Deck — All Sections</span>`;allCard.onclick=()=>selectFCSection('all');grid.appendChild(allCard);
-secs.forEach(s=>{const count=FC_DECKS[s.id]?FC_DECKS[s.id].length:0;const card=document.createElement('div');const isM1=s.mod==='mod1';const isM3=s.mod==='mod3';const isM4=s.mod==='mod4';const isM5=s.mod==='mod5';const isM6=s.mod==='mod6';card.className=`sec-card${isM1?' m1-sec':isM3?' m3-sec':isM4?' m4-sec':isM5?' m5-sec':isM6?' m6-sec':''}`;card.dataset.fcsecid=s.id;card.innerHTML=`<span class="sec-tag ${isM1?'m1-t':isM3?'m3-t':isM4?'m4-t':isM5?'m5-t':isM6?'m6-t':''}">${s.id}</span><span class="sec-name">${s.label}</span><span class="sec-count">${count} cards</span>`;card.onclick=()=>selectFCSection(s.id);grid.appendChild(card);});}
+const allCard=document.createElement('div');allCard.className='sec-card all-sec';allCard.dataset.fcsecid='all';const selMod=fcState.selModule;const allTagClass=selMod==='mod1'?'m1-t':selMod==='mod3'?'m3-t':selMod==='mod4'?'m4-t':'';let moduleAllCount=0;for(const sx of secs){moduleAllCount+=getMergedFlashDeck(sx.id).length;}allCard.innerHTML=`<span class="sec-tag ${allTagClass}">ALL</span><span class="sec-name">Full Deck — All Sections</span><span class="sec-count">${moduleAllCount} cards</span>`;allCard.onclick=()=>selectFCSection('all');grid.appendChild(allCard);
+secs.forEach(s=>{const count=getMergedFlashDeck(s.id).length;const card=document.createElement('div');const isM1=s.mod==='mod1';const isM3=s.mod==='mod3';const isM4=s.mod==='mod4';const isM5=s.mod==='mod5';const isM6=s.mod==='mod6';card.className=`sec-card${isM1?' m1-sec':isM3?' m3-sec':isM4?' m4-sec':isM5?' m5-sec':isM6?' m6-sec':''}`;card.dataset.fcsecid=s.id;card.innerHTML=`<span class="sec-tag ${isM1?'m1-t':isM3?'m3-t':isM4?'m4-t':isM5?'m5-t':isM6?'m6-t':''}">${s.id}</span><span class="sec-name">${s.label}</span><span class="sec-count">${count} cards</span>`;card.onclick=()=>selectFCSection(s.id);grid.appendChild(card);});}
 function selectFCSection(id){document.querySelectorAll('[data-fcsecid]').forEach(c=>c.classList.remove('selected'));document.querySelector(`[data-fcsecid="${id}"]`).classList.add('selected');fcState.selSection=id;document.getElementById('fc-start-btn').disabled=false;}
 function goBackFC(screenId){if(screenId==='fc-s-module'){fcState.selModule=null;fcState.selSection=null;document.querySelectorAll('[data-fcmod]').forEach(c=>c.classList.remove('selected'));document.getElementById('fc-mod-next-btn').disabled=true;}showFCScreen(screenId);}
 function showFCScreen(id){document.querySelectorAll('#fc-pane .screen').forEach(s=>s.classList.remove('active'));document.getElementById(id).classList.add('active');}
-function startFlashcards(){if(!fcState.selSection)return;let cards=[];if(fcState.selSection==='all'){let secs=[];if(fcState.selModule==='all')secs=[...MODULES.mod1.sections,...MODULES.mod2.sections,...MODULES.mod3.sections,...MODULES.mod4.sections,...MODULES.mod5.sections,...MODULES.mod6.sections];else if(MODULES[fcState.selModule])secs=MODULES[fcState.selModule].sections;secs.forEach(s=>{if(FC_DECKS[s.id])FC_DECKS[s.id].forEach(c=>cards.push({...c,sec:s.id,secLabel:s.label,mod:s.mod}));});}else{const secId=fcState.selSection;const allS=[...MODULES.mod1.sections,...MODULES.mod2.sections,...MODULES.mod3.sections,...MODULES.mod4.sections,...MODULES.mod5.sections,...MODULES.mod6.sections];const secInfo=allS.find(s=>s.id===secId);if(FC_DECKS[secId])FC_DECKS[secId].forEach(c=>cards.push({...c,sec:secId,secLabel:secInfo?secInfo.label:'',mod:secInfo?secInfo.mod:'mod2'}));}
+function startFlashcards(){if(!fcState.selSection)return;let cards=[];if(fcState.selSection==='all'){let secs=[];if(fcState.selModule==='all')secs=[...MODULES.mod1.sections,...MODULES.mod2.sections,...MODULES.mod3.sections,...MODULES.mod4.sections,...MODULES.mod5.sections,...MODULES.mod6.sections];else if(MODULES[fcState.selModule])secs=MODULES[fcState.selModule].sections;secs.forEach(s=>{getMergedFlashDeck(s.id).forEach(c=>cards.push({...c,sec:s.id,secLabel:s.label,mod:s.mod}));});}else{const secId=fcState.selSection;const allS=[...MODULES.mod1.sections,...MODULES.mod2.sections,...MODULES.mod3.sections,...MODULES.mod4.sections,...MODULES.mod5.sections,...MODULES.mod6.sections];const secInfo=allS.find(s=>s.id===secId);getMergedFlashDeck(secId).forEach(c=>cards.push({...c,sec:secId,secLabel:secInfo?secInfo.label:'',mod:secInfo?secInfo.mod:'mod2'}));}
 // Shuffle
 for(let i=cards.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[cards[i],cards[j]]=[cards[j],cards[i]];}
 fcState.deck=cards;fcState.currentIdx=0;fcState.known=new Set();fcState.learning=new Set();fcState.flipped=false;fcState.reviewMode=false;fcState.checkpointsDone=new Set();fcState._checkpointReturn=null;showFCScreen('fc-s-study');renderCard();}
@@ -1571,6 +1602,146 @@ function loadStats(){
 }
 function saveStats(s){try{localStorage.setItem('comptia_stats',JSON.stringify(s));}catch(e){}}
 
+const LS_WRONG_FOCUS = 'comptia_quiz_wrong_focus';
+function loadWrongFocus() {
+  try {
+    return JSON.parse(localStorage.getItem(LS_WRONG_FOCUS) || '{}') || {};
+  } catch (_) {
+    return {};
+  }
+}
+function saveWrongFocus(obj) {
+  try {
+    localStorage.setItem(LS_WRONG_FOCUS, JSON.stringify(obj));
+  } catch (_) {}
+}
+function getQuizSectionMeta(secId) {
+  const allS = [...MODULES.mod1.sections, ...MODULES.mod2.sections, ...MODULES.mod3.sections, ...MODULES.mod4.sections, ...MODULES.mod5.sections, ...MODULES.mod6.sections];
+  return allS.find((s) => s.id === secId) || { id: secId, label: 'Section', mod: 'mod2' };
+}
+function recordQuizWrong(secId, q) {
+  const data = loadWrongFocus();
+  if (!data[secId]) data[secId] = { wrong: 0, hint: '', topics: [] };
+  data[secId].wrong++;
+  data[secId].lastWrongAt = Date.now();
+  const line = q && q.question ? String(q.question).replace(/<[^>]+>/g, '').trim().slice(0, 120) : '';
+  if (line) data[secId].hint = line;
+  const topic = q && q.topic ? String(q.topic).trim() : '';
+  if (topic) {
+    if (!data[secId].topics) data[secId].topics = [];
+    if (!data[secId].topics.includes(topic) && data[secId].topics.length < 6) data[secId].topics.push(topic);
+  }
+  saveWrongFocus(data);
+}
+function clearWrongFocus() {
+  try {
+    localStorage.removeItem(LS_WRONG_FOCUS);
+  } catch (_) {}
+  renderQuizFocusPanel();
+}
+function escFocusHtml(s) {
+  return String(s || '')
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;');
+}
+function formatFocusRelative(ts) {
+  if (ts == null || typeof ts !== 'number' || !isFinite(ts)) return '';
+  const sec = Math.floor((Date.now() - ts) / 1000);
+  if (sec < 45) return 'just now';
+  const m = Math.floor(sec / 60);
+  if (m < 60) return m + 'm ago';
+  const h = Math.floor(m / 60);
+  if (h < 48) return h + 'h ago';
+  const d = Math.floor(h / 24);
+  return d + 'd ago';
+}
+function getSectionFocusBlurb(secId) {
+  const raw = SECTION_FOCUS[secId];
+  if (!raw) return '';
+  let t = String(raw).replace(/^Focus on [\d.]+\s*:\s*/i, '').trim();
+  if (t.length > 280) t = t.slice(0, 277) + '\u2026';
+  return t;
+}
+function focusMaybeLeaveQuizInProgress() {
+  if (!quizState.inProgress) return true;
+  return confirm('Leave your in-progress quiz? You can resume later from the banner above.');
+}
+function focusOpenSectionQuiz(secId) {
+  if (!focusMaybeLeaveQuizInProgress()) return;
+  if (quizState.inProgress) exitQuizToMenu();
+  const meta = getQuizSectionMeta(secId);
+  switchTab('quiz');
+  showQScreen('s-module');
+  selectModule(meta.mod);
+  goToSections();
+  selectSection(secId);
+  renderQuizResumeBanner();
+  const secScreen = document.getElementById('s-section');
+  if (secScreen) secScreen.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+}
+function focusOpenSectionFlashcards(secId) {
+  if (!focusMaybeLeaveQuizInProgress()) return;
+  if (quizState.inProgress) exitQuizToMenu();
+  const meta = getQuizSectionMeta(secId);
+  switchTab('fc');
+  showFCScreen('fc-s-module');
+  selectFCModule(meta.mod);
+  goToFCSections();
+  selectFCSection(secId);
+  renderQuizResumeBanner();
+  const fcSec = document.getElementById('fc-s-section');
+  if (fcSec) fcSec.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+}
+function renderQuizFocusRowHtml(id, data) {
+  const meta = getQuizSectionMeta(id);
+  const d = data[id];
+  const modTag = meta.mod === 'mod1' ? 'm1' : meta.mod === 'mod3' ? 'm3' : meta.mod === 'mod4' ? 'm4' : meta.mod === 'mod5' ? 'm5' : meta.mod === 'mod6' ? 'm6' : '';
+  const studyBlurb = getSectionFocusBlurb(id);
+  const studyBlock = studyBlurb
+    ? `<div class="focus-study">${escFocusHtml(studyBlurb)}</div>`
+    : '';
+  const topics = (d.topics && d.topics.length) ? `<div class="focus-topics">Topics: ${d.topics.map((t) => `<span class="focus-topic-tag">${escFocusHtml(t)}</span>`).join('')}</div>` : '';
+  const hint = d.hint && !studyBlurb ? `<div class="focus-hint">Last miss: “${escFocusHtml(d.hint)}…”</div>` : '';
+  const rel = formatFocusRelative(d.lastWrongAt);
+  const recency = rel ? `<span class="focus-recency" title="Last wrong answer">${escFocusHtml(rel)}</span>` : '';
+  const tip = studyBlurb
+    ? ''
+    : `<div class="focus-tip">Re-run a <strong>section quiz</strong> on ${id} or open <strong>Flashcards</strong> for the same section.</div>`;
+  const actions = `<div class="focus-row-actions"><button type="button" class="focus-short-btn" onclick="focusOpenSectionQuiz('${id}')">Section quiz</button><button type="button" class="focus-short-btn focus-short-btn-fc" onclick="focusOpenSectionFlashcards('${id}')">Flashcards</button></div>`;
+  return `<div class="focus-row${modTag ? ' focus-row-' + modTag : ''}">
+    <div class="focus-row-head"><span class="focus-sec-id">${id}</span><span class="focus-sec-name">${escFocusHtml(meta.label)}</span><span class="focus-wrong-count">${d.wrong}×</span>${recency}</div>
+    ${tip}${studyBlock}${topics}${hint}${actions}
+  </div>`;
+}
+function renderQuizFocusPanel() {
+  const el = document.getElementById('quiz-focus-panel');
+  if (!el) return;
+  const data = loadWrongFocus();
+  const ids = Object.keys(data).filter((id) => data[id] && data[id].wrong > 0);
+  if (ids.length === 0) {
+    el.innerHTML = `<div class="focus-panel focus-panel-empty"><p>Missed quiz questions are tracked by <strong>section</strong>. After you get one wrong, this list shows what to revisit.</p><button type="button" class="focus-empty-link" onclick="var g=document.getElementById('quiz-module-grid');if(g)g.scrollIntoView({behavior:'smooth',block:'start'});">Choose a module below</button></div>`;
+    return;
+  }
+  ids.sort((a, b) => (data[b].wrong || 0) - (data[a].wrong || 0));
+  const MAX_FOCUS_ROWS = 12;
+  const FOCUS_VISIBLE = 5;
+  const capped = ids.slice(0, MAX_FOCUS_ROWS);
+  const visibleIds = capped.slice(0, FOCUS_VISIBLE);
+  const hiddenIds = capped.slice(FOCUS_VISIBLE);
+  const visibleRows = visibleIds.map((id) => renderQuizFocusRowHtml(id, data)).join('');
+  const moreBlock =
+    hiddenIds.length > 0
+      ? `<details class="focus-more-wrap"><summary class="focus-more-sum">Show ${hiddenIds.length} more</summary><div class="focus-more-inner">${hiddenIds.map((id) => renderQuizFocusRowHtml(id, data)).join('')}</div></details>`
+      : '';
+  el.innerHTML = `<div class="focus-panel">
+    <div class="focus-panel-title">Focus on these areas <button type="button" class="focus-clear-btn" onclick="clearWrongFocus()">Clear list</button></div>
+    <div class="focus-panel-sub">Built from wrong answers in Quiz mode (not mock exam).</div>
+    <div class="focus-rows">${visibleRows}${moreBlock}</div>
+  </div>`;
+}
+
 function addQuizResult(correct,total,sectionLabel){
   const s=loadStats();
   const pct=Math.round((correct/total)*100);
@@ -1592,13 +1763,14 @@ function renderQuizStats(){
   const el=document.getElementById('quiz-stats-panel');
   if(!el)return;
   const s=loadStats();
-  if(s.totalQuizzes===0){el.innerHTML='';return;}
-  const avgPct=s.quizHistory.length?Math.round(s.quizHistory.reduce((a,r)=>a+r.pct,0)/s.quizHistory.length):0;
-  let histHTML=s.quizHistory.map(r=>{
-    const col=r.pct>=80?'sg':r.pct>=60?'sy':'';
-    return `<div class="hist-row"><span class="hist-sec">${r.label}</span><span class="hist-score stat-val ${col}">${r.pct}%</span><span class="hist-date">${r.date}</span></div>`;
-  }).join('');
-  el.innerHTML=`<div class="stats-panel">
+  if(s.totalQuizzes===0){el.innerHTML='';}
+  else{
+    const avgPct=s.quizHistory.length?Math.round(s.quizHistory.reduce((a,r)=>a+r.pct,0)/s.quizHistory.length):0;
+    let histHTML=s.quizHistory.map(r=>{
+      const col=r.pct>=80?'sg':r.pct>=60?'sy':'';
+      return `<div class="hist-row"><span class="hist-sec">${r.label}</span><span class="hist-score stat-val ${col}">${r.pct}%</span><span class="hist-date">${r.date}</span></div>`;
+    }).join('');
+    el.innerHTML=`<div class="stats-panel">
     <div class="stats-title">Your Quiz Stats <button class="clear-stats-btn" onclick="clearAllStats()">✕ Reset all</button></div>
     <div class="stats-grid">
       <div class="stat-box"><div class="stat-val sg">${s.totalQuizzes}</div><div class="stat-lbl">Quizzes</div></div>
@@ -1608,6 +1780,8 @@ function renderQuizStats(){
     </div>
     ${histHTML?`<div class="quiz-history">${histHTML}</div>`:''}
   </div>`;
+  }
+  renderQuizFocusPanel();
 }
 function renderFCStats(){
   const el=document.getElementById('fc-stats-panel');
@@ -1629,6 +1803,7 @@ function clearAllStats(){
   localStorage.removeItem('comptia_stats');
   localStorage.removeItem('comptia_quiz_save');
   localStorage.removeItem('comptia_fc_save');
+  localStorage.removeItem(LS_WRONG_FOCUS);
   renderQuizStats();renderFCStats();
   document.getElementById('quiz-resume-banner').innerHTML='';
   document.getElementById('fc-resume-banner').innerHTML='';
@@ -2153,8 +2328,15 @@ function resumeFC(){
 // Patch answer() to save after each question
 const _origAnswer=answer;
 window.answer=function(chosen,correct){
+  const ok=chosen===correct;
   _origAnswer(chosen,correct);
   saveQuizProgress();
+  if(!ok){
+    let q=null;
+    try{const area=document.getElementById('q-area');if(area&&area.dataset.q)q=JSON.parse(area.dataset.q);}catch(e){}
+    recordQuizWrong(getCurrentSection(),q);
+    renderQuizFocusPanel();
+  }
 };
 
 // Patch markCard() to save after each card
