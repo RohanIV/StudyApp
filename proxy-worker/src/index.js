@@ -26,6 +26,13 @@ export default {
     if (request.method === 'OPTIONS') {
       return new Response(null, { headers: corsHeaders() });
     }
+    if (request.method === 'GET') {
+      const html = `<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>CompTIA AI proxy</title><style>body{font-family:system-ui,sans-serif;max-width:42rem;margin:2rem auto;padding:0 1rem;line-height:1.5;color:#111}code{background:#f4f4f5;padding:.15rem .35rem;border-radius:4px;font-size:.9em}h1{font-size:1.25rem}</style></head><body><h1>Worker is running</h1><p>This URL is not meant to be tested by opening it in a tab. The study app sends <strong>POST</strong> with <code>{"prompt":"..."}</code> here.</p><p>Copy this address into the study tool → <strong>AI proxy</strong> → Worker URL → Save, then turn on <strong>AI variety</strong> and start a quiz.</p><p><small>POST-only API (Groq via Cloudflare).</small></p></body></html>`;
+      return new Response(html, {
+        status: 200,
+        headers: { 'Content-Type': 'text/html; charset=utf-8', 'Cache-Control': 'no-store' },
+      });
+    }
     if (request.method !== 'POST') {
       return jsonResponse({ error: 'Use POST with JSON body { "prompt": "..." }' }, 405);
     }
