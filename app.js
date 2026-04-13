@@ -130,7 +130,21 @@ async function completeViaProxy(prompt) {
   const headers = { 'Content-Type': 'application/json' };
   const sec = getProxySecret();
   if (sec) headers['X-Proxy-Secret'] = sec;
-  const res = await fetch(url, { method: 'POST', headers, body: JSON.stringify({ prompt }) });
+  let res;
+  try {
+    res = await fetch(url, { method: 'POST', headers, body: JSON.stringify({ prompt }) });
+  } catch (e) {
+    const msg = (e && e.message) || String(e);
+    if (/Failed to fetch|NetworkError|Load failed|Network request failed/i.test(msg)) {
+      throw new Error(
+        'Could not reach your Worker URL (browser blocked the request or the network dropped it). ' +
+          'Try: open DevTools → Network, reload, start a quiz, click the failed request and read the red status (e.g. blocked:mixed-content, ERR_NAME_NOT_RESOLVED). ' +
+          'Confirm the URL is exactly https://…workers.dev from the Cloudflare dashboard. ' +
+          'Disable VPN/ad-block/privacy extensions for this site, or try another network.'
+      );
+    }
+    throw e;
+  }
   let data;
   try {
     data = await res.json();

@@ -1,3 +1,5 @@
+# Do not add wrangler.jsonc at repo root — it overrides proxy-worker and creates a static-only Worker.
+/wrangler.jsonc
 .wrangler/
 node_modules/
 .env
