@@ -1435,6 +1435,7 @@ function goToSections(){if(!quizState.selModule)return;buildSectionGrid();const 
 function buildSectionGrid(){const grid=document.getElementById('sections-grid');grid.innerHTML='';let secs=[];if(quizState.selModule==='all'){secs=[...MODULES.mod1.sections,...MODULES.mod2.sections,...MODULES.mod3.sections,...MODULES.mod4.sections,...MODULES.mod5.sections,...MODULES.mod6.sections];}else if(MODULES[quizState.selModule]){secs=MODULES[quizState.selModule].sections;}
 const allCard=document.createElement('div');allCard.className='sec-card all-sec';allCard.dataset.secid='all';const selMod=quizState.selModule;const allTagClass=selMod==='mod1'?'m1-t':selMod==='mod3'?'m3-t':selMod==='mod4'?'m4-t':'';allCard.innerHTML=`<span class="sec-tag ${allTagClass}">ALL</span><span class="sec-name">All Sections</span>`;allCard.onclick=()=>selectSection('all');grid.appendChild(allCard);
 secs.forEach(s=>{const card=document.createElement('div');const isM1=s.mod==='mod1';const isM3=s.mod==='mod3';const isM4=s.mod==='mod4';const isM5=s.mod==='mod5';const isM6=s.mod==='mod6';card.className=`sec-card${isM1?' m1-sec':isM3?' m3-sec':isM4?' m4-sec':isM5?' m5-sec':isM6?' m6-sec':''}`;card.dataset.secid=s.id;card.innerHTML=`<span class="sec-tag ${isM1?'m1-t':isM3?'m3-t':isM4?'m4-t':isM5?'m5-t':isM6?'m6-t':''}">${s.id}</span><span class="sec-name">${s.label}</span>`;card.onclick=()=>selectSection(s.id);grid.appendChild(card);});}
+function getQuizQuestionCount(){const el=document.getElementById('quiz-question-count');const n=el?parseInt(el.value,10):20;return Number.isFinite(n)&&n>=5?n:20;}
 function selectSection(id){document.querySelectorAll('.sec-card').forEach(c=>c.classList.remove('selected'));document.querySelector(`[data-secid="${id}"]`).classList.add('selected');quizState.selSection=id;document.getElementById('start-btn').disabled=false;}
 function goBack(screenId){if(screenId==='s-module'){quizState.selModule=null;quizState.selSection=null;document.querySelectorAll('.module-card').forEach(c=>c.classList.remove('selected'));document.getElementById('mod-next-btn').disabled=true;updateModeIndicator();}showQScreen(screenId);}
 /** Leave active quiz; return to module home. Progress is saved so you can resume from the banner (use Discard there to clear). */
@@ -1442,7 +1443,7 @@ function exitQuizToMenu(){if(quizState.inProgress)saveQuizProgress();quizState.i
 function showQScreen(id){document.querySelectorAll('#quiz-pane .screen').forEach(s=>s.classList.remove('active'));document.getElementById(id).classList.add('active');}
 function getAllSections(){if(quizState.selModule==='all')return[...MODULES.mod1.sections.map(s=>s.id),...MODULES.mod2.sections.map(s=>s.id),...MODULES.mod3.sections.map(s=>s.id),...MODULES.mod4.sections.map(s=>s.id),...MODULES.mod5.sections.map(s=>s.id),...MODULES.mod6.sections.map(s=>s.id)];return MODULES[quizState.selModule].sections.map(s=>s.id);}
 function getCurrentSection(){if(quizState.selSection==='all')return quizState.sessionSections[quizState.currentQ]||'2.1';return quizState.selSection;}
-function startQuiz(){if(!quizState.selSection)return;quizState.currentQ=0;quizState.correct=0;quizState.wrong=0;quizState.answered=false;quizState.bankUsed={};quizState.usedTopics=[];quizState.inProgress=true;quizState._aiFallbackBannerShown=false;if(quizState.selSection==='all'){const all=getAllSections();quizState.sessionSections=[];for(let i=0;i<20;i++)quizState.sessionSections.push(all[i%all.length]);for(let i=quizState.sessionSections.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[quizState.sessionSections[i],quizState.sessionSections[j]]=[quizState.sessionSections[j],quizState.sessionSections[i]];}}
+function startQuiz(){if(!quizState.selSection)return;quizState.totalQ=getQuizQuestionCount();quizState.currentQ=0;quizState.correct=0;quizState.wrong=0;quizState.answered=false;quizState.bankUsed={};quizState.usedTopics=[];quizState.inProgress=true;quizState._aiFallbackBannerShown=false;if(quizState.selSection==='all'){const all=getAllSections();quizState.sessionSections=[];for(let i=0;i<quizState.totalQ;i++)quizState.sessionSections.push(all[i%all.length]);for(let i=quizState.sessionSections.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[quizState.sessionSections[i],quizState.sessionSections[j]]=[quizState.sessionSections[j],quizState.sessionSections[i]];}}
 document.getElementById('score-display').style.display='flex';updateScore();showQScreen('s-quiz');loadQuestion();}
 function updateScore(){document.getElementById('sc-correct').textContent=quizState.correct;document.getElementById('sc-wrong').textContent=quizState.wrong;const t=quizState.correct+quizState.wrong;document.getElementById('sc-pct').textContent=t>0?Math.round((quizState.correct/t)*100)+'%':'—';}
 function updateProgress(){const pct=(quizState.currentQ/quizState.totalQ)*100;document.getElementById('prog-fill').style.width=pct+'%';document.getElementById('prog-txt').textContent=`${quizState.currentQ} / ${quizState.totalQ}`;document.getElementById('q-counter').textContent=`Question ${quizState.currentQ+1} of ${quizState.totalQ}`;}
@@ -2202,6 +2203,7 @@ function saveQuizProgress(){
     const save={
       selModule:quizState.selModule,
       selSection:quizState.selSection,
+      totalQ:quizState.totalQ,
       currentQ:quizState.currentQ,
       correct:quizState.correct,
       wrong:quizState.wrong,
@@ -2228,11 +2230,12 @@ function renderQuizResumeBanner(){
   const ageStr=age<60?`${age}m ago`:`${Math.round(age/60)}h ago`;
   const modLabel={all:'All Modules',mod1:'Module 1',mod2:'Module 2',mod3:'Module 3',mod4:'Module 4',mod5:'Module 5',mod6:'Module 6'}[save.selModule]||'';
   const secLabel=save.selSection==='all'?'All Sections':save.selSection;
+  const totalQ=save.totalQ||20;
   const pct=save.correct+save.wrong>0?Math.round(save.correct/(save.correct+save.wrong)*100):0;
   el.innerHTML=`<div class="resume-banner">
     <div class="resume-icon">📋</div>
     <div class="resume-info">
-      <div class="resume-title">Resume Quiz — Q${save.currentQ+1} of 20</div>
+      <div class="resume-title">Resume Quiz — Q${save.currentQ+1} of ${totalQ}</div>
       <div class="resume-sub">${modLabel} · ${secLabel} · ${save.correct}✓ ${save.wrong}✗ · ${pct}% · ${ageStr}</div>
     </div>
     <div class="resume-btns">
@@ -2246,6 +2249,7 @@ function resumeQuiz(){
   if(!save)return;
   quizState.selModule=save.selModule;
   quizState.selSection=save.selSection;
+  quizState.totalQ=save.totalQ||20;
   quizState.currentQ=save.currentQ;
   quizState.correct=save.correct;
   quizState.wrong=save.wrong;

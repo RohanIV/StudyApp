@@ -133,6 +133,19 @@
     <div class="screen-title" id="sec-screen-title">Choose a Section</div>
     <div class="screen-sub">Pick a specific topic or quiz all sections.</div>
     <div class="sections-grid" id="sections-grid"></div>
+    <div class="quiz-count-row">
+      <label for="quiz-question-count" class="quiz-count-label">Questions in this quiz</label>
+      <select id="quiz-question-count" class="quiz-count-select">
+        <option value="5">5</option>
+        <option value="10">10</option>
+        <option value="15">15</option>
+        <option value="20" selected>20</option>
+        <option value="25">25</option>
+        <option value="30">30</option>
+        <option value="40">40</option>
+        <option value="50">50</option>
+      </select>
+    </div>
     <button class="start-btn" id="start-btn" disabled onclick="startQuiz()">START QUIZ →</button>
   </div>
 
