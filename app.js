@@ -4,9 +4,11 @@
 function switchTab(tab) {
   document.getElementById('tab-quiz').classList.toggle('active', tab==='quiz');
   document.getElementById('tab-fc').classList.toggle('active', tab==='fc');
+  document.getElementById('tab-tutor').classList.toggle('active', tab==='tutor');
   document.getElementById('tab-exam').classList.toggle('active', tab==='exam');
   document.getElementById('quiz-pane').style.display = tab==='quiz' ? 'block' : 'none';
   document.getElementById('fc-pane').style.display = tab==='fc' ? 'block' : 'none';
+  document.getElementById('tutor-pane').style.display = tab==='tutor' ? 'block' : 'none';
   document.getElementById('exam-pane').style.display = tab==='exam' ? 'block' : 'none';
   if (tab==='quiz') { document.getElementById('score-display').style.display = quizState.inProgress ? 'flex':'none'; }
   else { document.getElementById('score-display').style.display = 'none'; }
@@ -171,6 +173,154 @@ function parseJSONFromModel(raw) {
     }
     throw new Error('Invalid JSON from model');
   }
+}
+
+// ═══════════════════════════════════════════════════════
+// TUTOR PANEL (context-aware AI chat)
+// ═══════════════════════════════════════════════════════
+const LS_TUTOR_CHAT = 'comptia_tutor_chat_v1';
+let tutorState = {messages:[],busy:false};
+function saveTutorHistory() {
+  try {
+    const trimmed = tutorState.messages.slice(-100);
+    localStorage.setItem(LS_TUTOR_CHAT, JSON.stringify(trimmed));
+  } catch (_) {}
+}
+function loadTutorHistory() {
+  try {
+    const raw = JSON.parse(localStorage.getItem(LS_TUTOR_CHAT) || '[]');
+    if (!Array.isArray(raw)) return [];
+    return raw
+      .filter((m) => m && typeof m.text === 'string' && typeof m.role === 'string')
+      .map((m) => ({ role: m.role, text: m.text }))
+      .slice(-100);
+  } catch (_) {
+    return [];
+  }
+}
+function clearTutorHistory() {
+  tutorState.messages = [];
+  try { localStorage.removeItem(LS_TUTOR_CHAT); } catch (_) {}
+  renderTutorLog();
+}
+function getTutorContext() {
+  let secId = null;
+  if (quizState && quizState.inProgress) secId = getCurrentSection();
+  else if (quizState && quizState.selSection && quizState.selSection !== 'all') secId = quizState.selSection;
+  else if (fcState && fcState.selSection && fcState.selSection !== 'all') secId = fcState.selSection;
+  if (!secId) return { secId: '', label: 'General CompTIA A+ help', focus: '' };
+  const meta = getQuizSectionMeta(secId);
+  return {
+    secId,
+    label: `${secId} - ${meta.label}`,
+    focus: SECTION_FOCUS[secId] || ''
+  };
+}
+function renderTutorContextChip() {
+  const el = document.getElementById('tutor-context-chip');
+  if (!el) return;
+  const ctx = getTutorContext();
+  el.textContent = `Context: ${ctx.label}`;
+}
+function renderTutorLog() {
+  const log = document.getElementById('tutor-chat-log');
+  if (!log) return;
+  if (!tutorState.messages.length) {
+    log.innerHTML = `<div class="tutor-bubble system">Ask a study question. Example: "Explain port 443 vs 80 in plain English."</div>`;
+    return;
+  }
+  log.innerHTML = tutorState.messages.map((m) => `<div class="tutor-bubble ${m.role}">${escFocusHtml(m.text)}</div>`).join('');
+  log.scrollTop = log.scrollHeight;
+}
+function normalizeTutorText(text) {
+  return String(text || '')
+    .replace(/\*\*(.*?)\*\*/g, '$1')
+    .replace(/\*(.*?)\*/g, '$1')
+    .replace(/`([^`]+)`/g, '$1')
+    .replace(/\r/g, '')
+    .trim();
+}
+function buildTutorPrompt(userText) {
+  const ctx = getTutorContext();
+  const history = tutorState.messages
+    .slice(-6)
+    .map((m) => `${m.role === 'user' ? 'User' : 'Tutor'}: ${m.text}`)
+    .join('\n');
+  return `You are a friendly CompTIA A+ tutor. Give accurate, concise, practical explanations.\nRules:\n- Keep answers under 220 words unless asked for more.\n- Use bullet points when helpful.\n- If unsure, say what to verify.\n- Use simple language first, then a quick technical note.\n\nCurrent study context:\n- Section: ${ctx.secId || 'none'}\n- Section label: ${ctx.label}\n- Focus notes: ${ctx.focus || 'none'}\n\nRecent conversation:\n${history || 'none'}\n\nStudent question:\n${userText}`;
+}
+async function sendTutorMessage() {
+  const input = document.getElementById('tutor-input');
+  if (!input || tutorState.busy) return;
+  const text = String(input.value || '').trim();
+  await sendTutorText(text);
+}
+async function sendTutorText(text) {
+  if (tutorState.busy) return;
+  text = String(text || '').trim();
+  if (!text) return;
+  tutorState.messages.push({ role: 'user', text });
+  saveTutorHistory();
+  const input = document.getElementById('tutor-input');
+  if (input) input.value = '';
+  renderTutorLog();
+  if (!canUseLiveAI()) {
+    tutorState.messages.push({
+      role: 'system',
+      text: 'Tutor needs AI proxy access. Turn on AI variety and save your worker URL in quiz settings.'
+    });
+    saveTutorHistory();
+    renderTutorLog();
+    return;
+  }
+  tutorState.busy = true;
+  const btn = document.querySelector('.tutor-send-btn');
+  if (btn) btn.disabled = true;
+  tutorState.messages.push({ role: 'assistant', text: 'Thinking...' });
+  renderTutorLog();
+  try {
+    const prompt = buildTutorPrompt(text);
+    const answer = await completeViaProxy(prompt);
+    tutorState.messages[tutorState.messages.length - 1] = {
+      role: 'assistant',
+      text: normalizeTutorText(answer).slice(0, 2200)
+    };
+  } catch (e) {
+    tutorState.messages[tutorState.messages.length - 1] = {
+      role: 'system',
+      text: `Tutor failed: ${(e && e.message) || String(e)}`
+    };
+  } finally {
+    saveTutorHistory();
+    tutorState.busy = false;
+    if (btn) btn.disabled = false;
+    renderTutorLog();
+    renderTutorContextChip();
+  }
+}
+function wireTutorEnterKey() {
+  const input = document.getElementById('tutor-input');
+  if (!input) return;
+  input.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      sendTutorMessage();
+    }
+  });
+}
+function askAboutCurrentQuestion() {
+  const area = document.getElementById('q-area');
+  if (!area || !area.dataset.q) return;
+  let q;
+  try {
+    q = JSON.parse(area.dataset.q);
+  } catch (_) {
+    return;
+  }
+  const prompt = `I got this quiz question and need help understanding it.\nQuestion: ${q.question || ''}\nPlease explain the key concept in simple terms, why the correct answer is right, and why one common wrong answer is wrong.`;
+  switchTab('tutor');
+  const input = document.getElementById('tutor-input');
+  if (input) input.value = prompt;
+  sendTutorText(prompt);
 }
 
 // ═══════════════════════════════════════════════════════
@@ -1453,7 +1603,7 @@ let question=null,fromAI=false,aiErr='';if(useAI){try{question=await generateAIQ
 if(!question)question=getBankQuestion(sec);if(!question){area.innerHTML=`<div class="err-card"><div class="err-msg">Could not load question for section ${sec}.</div><button class="retry-btn" onclick="loadQuestion()">Retry</button></div>`;return;}renderQuestion(question,{aiBankFallback:useAI&&!fromAI,aiError:aiErr});}
 function getBankQuestion(secId){const bank=BANK[secId];if(!bank||bank.length===0){const fb=Object.keys(BANK)[0];return getBankQuestion(fb);}if(!quizState.bankUsed[secId])quizState.bankUsed[secId]=[];const used=quizState.bankUsed[secId];const avail=bank.map((_,i)=>i).filter(i=>!used.includes(i));let idx;if(avail.length>0){idx=avail[Math.floor(Math.random()*avail.length)];}else{quizState.bankUsed[secId]=[];idx=Math.floor(Math.random()*bank.length);}quizState.bankUsed[secId].push(idx);const q=bank[idx];return{question:q.q,options:q.o,correct:q.c,explanation:q.e,scenario:q.sc||'',fromBank:true};}
 async function generateAIQuestion(secId){const allS=[...MODULES.mod1.sections,...MODULES.mod2.sections,...MODULES.mod3.sections,...MODULES.mod4.sections,...MODULES.mod5.sections,...MODULES.mod6.sections];const secInfo=allS.find(s=>s.id===secId);const mod=secInfo&&secInfo.mod;const notes=mod==='mod1'?NOTES_M1:mod==='mod3'?NOTES_M3:mod==='mod4'?NOTES_M4:mod==='mod5'?NOTES_M5:mod==='mod6'?NOTES_M6:NOTES_M2;const focus=SECTION_FOCUS[secId]||'';const avoid=quizState.usedTopics.slice(-5).join(', ');const prompt=`You are a CompTIA A+ exam question writer for 220-1201/220-1202. Generate ONE authentic exam-style question.\n\nSTUDY NOTES:\n${notes}\n\nSECTION: ${focus}\n${avoid?`AVOID repeating these recent topics: ${avoid}`:''}\n\nREQUIREMENTS:\n- Scenario-based ("A technician...", "A user reports...")\n- 4 answer options (A/B/C/D), one correct, distractors plausible\n- CompTIA exam style\n\nReturn ONLY valid JSON, no markdown:\n{"scenario":"optional setup","question":"the question","options":["A. option","B. option","C. option","D. option"],"correct":0,"explanation":"full explanation","topic":"2-4 word topic"}`;const text=await completeViaProxy(prompt);const q=parseJSONFromModel(text);if(!q.question||!q.options||q.options.length!==4||q.correct===undefined)throw new Error('Invalid format');if(q.topic)quizState.usedTopics.push(q.topic);return q;}
-function renderQuestion(q,opts){opts=opts||{};const area=document.getElementById('q-area');let html='';if(opts.aiBankFallback&&!quizState._aiFallbackBannerShown){quizState._aiFallbackBannerShown=true;const hint=(opts.aiError&&String(opts.aiError).slice(0,280))||'';const esc=h=>h.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');const errLine=hint?`<div class="ai-fallback-detail"><strong>Details:</strong> ${esc(hint)}</div>`:'';html+=`<div class="ai-fallback-banner" role="status"><div>Live AI did not return a usable question. Using built-in questions for this quiz.</div>${errLine}<div class="ai-fallback-hint">Check: Worker URL saved (click <strong>Save proxy settings</strong>), shared secret matches <code>PROXY_SECRET</code> if you use one, <code>wrangler secret put GROQ_API_KEY</code> on the worker, and browser DevTools → Console for errors.</div></div>`;}html+=`<div class="q-card"><div class="q-num-badge">Question ${quizState.currentQ+1} of ${quizState.totalQ}</div>`;if(q.scenario&&q.scenario.trim())html+=`<div class="q-scenario">${q.scenario}</div>`;html+=`<div class="q-text">${q.question}</div><div class="options">`;const letters=['A','B','C','D'];q.options.forEach((opt,i)=>{const txt=opt.replace(/^[A-D]\.\s*/,'');html+=`<button class="opt" onclick="answer(${i},${q.correct})" data-idx="${i}"><span class="opt-let">${letters[i]}</span><span>${txt}</span></button>`;});html+=`</div></div>`;area.innerHTML=html;area.dataset.q=JSON.stringify(q);}
+function renderQuestion(q,opts){opts=opts||{};const area=document.getElementById('q-area');let html='';if(opts.aiBankFallback&&!quizState._aiFallbackBannerShown){quizState._aiFallbackBannerShown=true;const hint=(opts.aiError&&String(opts.aiError).slice(0,280))||'';const esc=h=>h.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');const errLine=hint?`<div class="ai-fallback-detail"><strong>Details:</strong> ${esc(hint)}</div>`:'';html+=`<div class="ai-fallback-banner" role="status"><div>Live AI did not return a usable question. Using built-in questions for this quiz.</div>${errLine}<div class="ai-fallback-hint">Check: Worker URL saved (click <strong>Save proxy settings</strong>), shared secret matches <code>PROXY_SECRET</code> if you use one, <code>wrangler secret put GROQ_API_KEY</code> on the worker, and browser DevTools → Console for errors.</div></div>`;}html+=`<div class="q-card"><div class="q-num-badge">Question ${quizState.currentQ+1} of ${quizState.totalQ}</div>`;if(q.scenario&&q.scenario.trim())html+=`<div class="q-scenario">${q.scenario}</div>`;html+=`<div class="q-text">${q.question}</div><div class="options">`;const letters=['A','B','C','D'];q.options.forEach((opt,i)=>{const txt=opt.replace(/^[A-D]\.\s*/,'');html+=`<button class="opt" onclick="answer(${i},${q.correct})" data-idx="${i}"><span class="opt-let">${letters[i]}</span><span>${txt}</span></button>`;});html+=`</div><button type="button" class="ask-tutor-btn" onclick="askAboutCurrentQuestion()">Ask about this question</button></div>`;area.innerHTML=html;area.dataset.q=JSON.stringify(q);}
 function answer(chosen,correct){if(quizState.answered)return;quizState.answered=true;document.querySelectorAll('.opt').forEach((btn,i)=>{btn.disabled=true;if(i===correct)btn.classList.add('correct');else if(i===chosen)btn.classList.add('incorrect');else btn.classList.add('revealed');});const isCorrect=chosen===correct;if(isCorrect)quizState.correct++;else quizState.wrong++;updateScore();const area=document.getElementById('q-area');const q=JSON.parse(area.dataset.q);const letters=['A','B','C','D'];const expDiv=document.createElement('div');expDiv.className='exp-card';expDiv.innerHTML=`<div class="exp-hdr"><span class="res-badge ${isCorrect?'c':'i'}">${isCorrect?'✓ Correct':'✗ Incorrect'}</span><span style="color:var(--muted);font-size:12px">${isCorrect?'Great work!':'Correct: '+letters[correct]}</span></div><div class="exp-txt">${q.explanation}</div>`;area.appendChild(expDiv);const nextBtn=document.createElement('button');nextBtn.className='next-btn';nextBtn.textContent=quizState.currentQ+1>=quizState.totalQ?'VIEW RESULTS →':'NEXT QUESTION →';nextBtn.onclick=()=>{quizState.currentQ++;loadQuestion();};area.appendChild(nextBtn);}
 function showFinal(){document.getElementById('score-display').style.display='none';quizState.inProgress=false;showQScreen('s-final');const pct=Math.round((quizState.correct/quizState.totalQ)*100);let grade,gradeClass,fb;if(pct>=90){grade='A';gradeClass='gA';fb='Exceptional! You have a thorough command of this material. You\'re exam-ready.';}else if(pct>=80){grade='B';gradeClass='gB';fb='Strong performance! Review sections you hesitated on and push toward 90%+ before exam day.';}else if(pct>=70){grade='C';gradeClass='gC';fb='Good foundation, but gaps remain. Target the sections you struggled with using focused section mode.';}else if(pct>=60){grade='D';gradeClass='gDF';fb='More revision needed. Go back through notes section by section using flashcard mode too.';}else{grade='F';gradeClass='gDF';fb='Don\'t give up — use the flashcard mode to drill key terms, then retry the quiz section by section.';}
 document.getElementById('final-grade').textContent=grade;document.getElementById('final-grade').className='final-grade '+gradeClass;document.getElementById('final-pct').textContent=pct+'%';document.getElementById('f-correct').textContent=quizState.correct;document.getElementById('f-wrong').textContent=quizState.wrong;document.getElementById('f-total').textContent=quizState.totalQ;document.getElementById('final-fb').textContent=fb;}
@@ -2397,7 +2547,8 @@ const _origSwitchTab=switchTab;
 window.switchTab=function(tab){
   _origSwitchTab(tab);
   if(tab==='quiz'){renderQuizResumeBanner();renderQuizStats();}
-  else{renderFCResumeBanner();renderFCStats();}
+  else if(tab==='fc'){renderFCResumeBanner();renderFCStats();}
+  else if(tab==='tutor'){renderTutorContextChip();renderTutorLog();}
 };
 
 // ═══════════════════════════════════════════════════════
@@ -2432,3 +2583,7 @@ renderQuizResumeBanner();
 renderQuizStats();
 renderFCResumeBanner();
 renderFCStats();
+wireTutorEnterKey();
+tutorState.messages = loadTutorHistory();
+renderTutorContextChip();
+renderTutorLog();

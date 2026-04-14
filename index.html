@@ -35,6 +35,7 @@
 <div class="nav-tabs">
   <button class="nav-tab active" id="tab-quiz" onclick="switchTab('quiz')"><span class="tab-icon">🧠</span> Quiz</button>
   <button class="nav-tab fc-tab" id="tab-fc" onclick="switchTab('fc')"><span class="tab-icon">🃏</span> Flashcards</button>
+  <button class="nav-tab tutor-tab" id="tab-tutor" onclick="switchTab('tutor')"><span class="tab-icon">💬</span> Tutor</button>
   <button class="nav-tab exam-tab" id="tab-exam" onclick="switchTab('exam')"><span class="tab-icon">📋</span> Mock Exam</button>
 </div>
 
@@ -330,6 +331,23 @@
 
 
 </div><!-- /fc-pane -->
+
+<!-- ═══ TUTOR PANE ═══ -->
+<div id="tutor-pane" style="display:none;">
+  <div class="screen active">
+    <div class="screen-title">AI Tutor</div>
+    <div class="screen-sub">Ask anything you do not understand. Replies include your current study context when possible.</div>
+    <div class="tutor-tools">
+      <button type="button" class="tutor-clear-btn" onclick="clearTutorHistory()">Clear chat history</button>
+    </div>
+    <div id="tutor-context-chip" class="tutor-context-chip">Context: none selected yet</div>
+    <div id="tutor-chat-log" class="tutor-chat-log" aria-live="polite"></div>
+    <div class="tutor-input-row">
+      <textarea id="tutor-input" class="tutor-input" placeholder="Example: Explain RAID 5 simply and when not to use it." rows="3"></textarea>
+      <button type="button" class="start-btn tutor-send-btn" onclick="sendTutorMessage()">ASK TUTOR →</button>
+    </div>
+  </div>
+</div><!-- /tutor-pane -->
 
 <!-- ═══ EXAM PANE ═══ -->
 <div id="exam-pane" style="display:none;">
