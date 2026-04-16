@@ -1,0 +1,88 @@
+{
+  "modules": [
+    {
+      "id": "mod1",
+      "shortLabel": "MODULE 1",
+      "label": "Module 1 - Mobile Devices",
+      "title": "Mobile Devices Notes",
+      "description": "Hardware, OS, connections, troubleshooting, and security.",
+      "sections": [
+        {
+          "id": "1.0",
+          "title": "Module 1 Overview",
+          "file": "./study-notes/mod1/overview.md"
+        }
+      ]
+    },
+    {
+      "id": "mod2",
+      "shortLabel": "MODULE 2",
+      "label": "Module 2 - Networking",
+      "title": "Networking Notes",
+      "description": "Architecture, protocols, ports, tools, and troubleshooting.",
+      "sections": [
+        {
+          "id": "2.0",
+          "title": "Module 2 Overview",
+          "file": "./study-notes/mod2/overview.md"
+        }
+      ]
+    },
+    {
+      "id": "mod3",
+      "shortLabel": "MODULE 3",
+      "label": "Module 3 - Hardware",
+      "title": "Hardware Notes",
+      "description": "Displays, components, power, printers, and diagnostics.",
+      "sections": [
+        {
+          "id": "3.0",
+          "title": "Module 3 Overview",
+          "file": "./study-notes/mod3/overview.md"
+        }
+      ]
+    },
+    {
+      "id": "mod4",
+      "shortLabel": "MODULE 4",
+      "label": "Module 4 - Operating Systems",
+      "title": "Operating Systems Notes",
+      "description": "Windows, macOS, Linux, tools, and installation methods.",
+      "sections": [
+        {
+          "id": "4.0",
+          "title": "Module 4 Overview",
+          "file": "./study-notes/mod4/overview.md"
+        }
+      ]
+    },
+    {
+      "id": "mod5",
+      "shortLabel": "MODULE 5",
+      "label": "Module 5 - Virtualization and Cloud",
+      "title": "Virtualization and Cloud Notes",
+      "description": "Virtual machines, cloud models, and productivity tools.",
+      "sections": [
+        {
+          "id": "5.0",
+          "title": "Module 5 Overview",
+          "file": "./study-notes/mod5/overview.md"
+        }
+      ]
+    },
+    {
+      "id": "mod6",
+      "shortLabel": "MODULE 6",
+      "label": "Module 6 - Security",
+      "title": "Security Notes",
+      "description": "Physical, logical, malware, encryption, and hardening.",
+      "sections": [
+        {
+          "id": "6.0",
+          "title": "Module 6 Overview",
+          "file": "./study-notes/mod6/overview.md"
+        }
+      ]
+    }
+  ]
+}

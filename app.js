@@ -1612,7 +1612,7 @@ function resetToMenu(){document.querySelectorAll('.sec-card').forEach(c=>c.class
 // ═══════════════════════════════════════════════════════
 // FLASHCARD STATE & LOGIC
 // ═══════════════════════════════════════════════════════
-let fcState = {selModule:null,selSection:null,deck:[],currentIdx:0,known:new Set(),learning:new Set(),flipped:false,reviewMode:false,checkpointsDone:new Set()};
+let fcState = {selModule:null,selSection:null,deck:[],currentIdx:0,known:new Set(),learning:new Set(),flipped:false,reviewMode:false,checkpointsDone:new Set(),_checkpointReturn:null,_fullReviewReturn:null};
 
 function selectFCModule(mod){document.querySelectorAll('[data-fcmod]').forEach(c=>c.classList.remove('selected'));document.querySelector(`[data-fcmod="${mod}"]`).classList.add('selected');fcState.selModule=mod;document.getElementById('fc-mod-next-btn').disabled=false;}
 function goToFCSections(){if(!fcState.selModule)return;buildFCSectionGrid();const t={mod1:'Module 1 — Mobile Devices',mod2:'Module 2 — Networking',mod3:'Module 3 — Hardware',mod4:'Module 4 — Operating Systems',mod5:'Module 5 — Virtualization & Cloud',mod6:'Module 6 — Security',all:'All Modules'};document.getElementById('fc-sec-title').textContent=t[fcState.selModule]||'Choose a Deck';showFCScreen('fc-s-section');}
@@ -1625,11 +1625,11 @@ function showFCScreen(id){document.querySelectorAll('#fc-pane .screen').forEach(
 function startFlashcards(){if(!fcState.selSection)return;let cards=[];if(fcState.selSection==='all'){let secs=[];if(fcState.selModule==='all')secs=[...MODULES.mod1.sections,...MODULES.mod2.sections,...MODULES.mod3.sections,...MODULES.mod4.sections,...MODULES.mod5.sections,...MODULES.mod6.sections];else if(MODULES[fcState.selModule])secs=MODULES[fcState.selModule].sections;secs.forEach(s=>{getMergedFlashDeck(s.id).forEach(c=>cards.push({...c,sec:s.id,secLabel:s.label,mod:s.mod}));});}else{const secId=fcState.selSection;const allS=[...MODULES.mod1.sections,...MODULES.mod2.sections,...MODULES.mod3.sections,...MODULES.mod4.sections,...MODULES.mod5.sections,...MODULES.mod6.sections];const secInfo=allS.find(s=>s.id===secId);getMergedFlashDeck(secId).forEach(c=>cards.push({...c,sec:secId,secLabel:secInfo?secInfo.label:'',mod:secInfo?secInfo.mod:'mod2'}));}
 // Shuffle
 for(let i=cards.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[cards[i],cards[j]]=[cards[j],cards[i]];}
-fcState.deck=cards;fcState.currentIdx=0;fcState.known=new Set();fcState.learning=new Set();fcState.flipped=false;fcState.reviewMode=false;fcState.checkpointsDone=new Set();fcState._checkpointReturn=null;showFCScreen('fc-s-study');renderCard();}
+fcState.deck=cards;fcState.currentIdx=0;fcState.known=new Set();fcState.learning=new Set();fcState.flipped=false;fcState.reviewMode=false;fcState.checkpointsDone=new Set();fcState._checkpointReturn=null;fcState._fullReviewReturn=null;showFCScreen('fc-s-study');renderCard();}
 
 function renderCard(){const card=fcState.deck[fcState.currentIdx];if(!card)return;const total=fcState.deck.length;const done=fcState.known.size+fcState.learning.size;const pct=Math.round((done/total)*100);document.getElementById('fc-prog-fill').style.width=pct+'%';document.getElementById('fc-prog-txt').textContent=pct+'%';document.getElementById('fc-card-num').textContent=`${fcState.currentIdx+1} / ${total}`;document.getElementById('fc-card-num2').textContent=`Card ${fcState.currentIdx+1} of ${total}`;document.getElementById('fc-known-count').textContent=fcState.known.size;document.getElementById('fc-learning-count').textContent=fcState.learning.size;const isM1=card.mod==='mod1';const isM3=card.mod==='mod3';const isM4=card.mod==='mod4';const isM5=card.mod==='mod5';const isM6=card.mod==='mod6';const secLabel=`${card.sec} — ${card.secLabel}`;document.getElementById('fc-front-section').textContent=secLabel;document.getElementById('fc-back-section').textContent=secLabel;document.getElementById('fc-term').textContent=card.t;document.getElementById('fc-def').innerHTML=card.d;const frontFace=document.getElementById('fc-front');const backFace=document.getElementById('fc-back');const secTag=document.getElementById('fc-sec-tag');frontFace.className=`fc-face fc-front${isM1?' m1-card':isM3?' m3-card':isM4?' m4-card':isM5?' m5-card':isM6?' m6-card':''}`;backFace.className=`fc-face fc-back${isM1?' m1-card':isM3?' m3-card':isM4?' m4-card':isM5?' m5-card':isM6?' m6-card':''}`;if(isM1){secTag.style.borderColor='rgba(168,85,247,.3)';secTag.style.color='var(--purple)';secTag.style.background='rgba(168,85,247,.07)';}else if(isM3){secTag.style.borderColor='rgba(0,255,136,.3)';secTag.style.color='var(--green)';secTag.style.background='rgba(0,255,136,.07)';}else if(isM4){secTag.style.borderColor='rgba(255,140,0,.3)';secTag.style.color='#ff8c00';secTag.style.background='rgba(255,140,0,.07)';}else if(isM5){secTag.style.borderColor='rgba(0,200,150,.3)';secTag.style.color='#00c896';secTag.style.background='rgba(0,200,150,.07)';}else if(isM6){secTag.style.borderColor='rgba(239,68,68,.3)';secTag.style.color='#ef4444';secTag.style.background='rgba(239,68,68,.07)';}else{secTag.style.borderColor='rgba(255,187,0,.3)';secTag.style.color='var(--yellow)';secTag.style.background='rgba(255,187,0,.07)';}
-secTag.textContent=`${card.sec} — ${card.secLabel}`;// Reset flip
-if(fcState.flipped){fcState.flipped=false;document.getElementById('flip-card').classList.remove('flipped');}
+secTag.textContent=`${card.sec} — ${card.secLabel}`;// Always reset to question side when rendering a card
+fcState.flipped=false;document.getElementById('flip-card').classList.remove('flipped');
 document.getElementById('fc-verdict').style.display='none';document.getElementById('verdict-hint').classList.remove('hidden');document.getElementById('verdict-hint').textContent='Flip the card to see the definition, then rate yourself';document.getElementById('fc-prev-btn').disabled=fcState.currentIdx===0;document.getElementById('fc-next-btn').disabled=fcState.currentIdx>=fcState.deck.length-1;}
 
 function flipCard(){fcState.flipped=!fcState.flipped;document.getElementById('flip-card').classList.toggle('flipped',fcState.flipped);if(fcState.flipped){document.getElementById('fc-verdict').style.display='grid';document.getElementById('verdict-hint').classList.add('hidden');}else{document.getElementById('fc-verdict').style.display='none';document.getElementById('verdict-hint').classList.remove('hidden');}}
@@ -1666,6 +1666,7 @@ const total=fcState.deck.length;const done=fcState.known.size+fcState.learning.s
 const isLast=fcState.currentIdx>=fcState.deck.length-1;
 if(isLast){
   if(fcState._checkpointReturn){returnFromCheckpointReview();}
+  else if(fcState._fullReviewReturn){returnFromFullReview();}
   else{showFCComplete();}
   return;
 }
@@ -1679,6 +1680,8 @@ function fcNext(){
     // If we're in a checkpoint mini-review, return to main deck instead of showing complete screen
     if(fcState._checkpointReturn){
       returnFromCheckpointReview();
+    } else if(fcState._fullReviewReturn){
+      returnFromFullReview();
     } else {
       showFCComplete();
     }
@@ -1709,8 +1712,33 @@ function fcPrev(){if(fcState.currentIdx>0){fcState.currentIdx--;renderCard();}}
 function showFCComplete(){showFCScreen('fc-s-complete');document.getElementById('fc-final-known').textContent=fcState.known.size;document.getElementById('fc-final-learning').textContent=fcState.learning.size;document.getElementById('fc-final-total').textContent=fcState.deck.length;const pct=Math.round((fcState.known.size/fcState.deck.length)*100);let fb='';if(pct>=90)fb='Outstanding! You know this material cold.';else if(pct>=70)fb='Solid progress! Review the "Still Learning" cards to close the gaps.';else if(pct>=50)fb='Getting there — click "Review Still Learning" to focus on the cards you missed.';else fb='Keep going! Use "Review Still Learning" to drill the tricky ones before moving to the quiz.';document.getElementById('fc-final-fb').textContent=fb;const reviewBtn=document.getElementById('fc-review-btn');if(fcState.learning.size===0){reviewBtn.style.display='none';}else{reviewBtn.style.display='inline-block';reviewBtn.textContent=`Review Still Learning (${fcState.learning.size}) ↩`;}}
 
 function reviewLearning(){// Rebuild deck from learning set only (end-of-deck full review)
-const newDeck=[];fcState.learning.forEach(idx=>{newDeck.push(fcState.deck[idx]);});for(let i=newDeck.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[newDeck[i],newDeck[j]]=[newDeck[j],newDeck[i]];}
-fcState.deck=newDeck;fcState.currentIdx=0;fcState.known=new Set();fcState.learning=new Set();fcState.flipped=false;fcState.reviewMode=true;fcState.checkpointsDone=new Set();showFCScreen('fc-s-study');renderCard();}
+const reviewPairs=[];fcState.learning.forEach(idx=>{reviewPairs.push({card:fcState.deck[idx],origIdx:idx});});for(let i=reviewPairs.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[reviewPairs[i],reviewPairs[j]]=[reviewPairs[j],reviewPairs[i]];}
+fcState._fullReviewReturn={deck:fcState.deck,known:new Set(fcState.known),learning:new Set(fcState.learning),checkpoints:new Set(fcState.checkpointsDone),reviewPairs};
+fcState.deck=reviewPairs.map(p=>p.card);fcState.currentIdx=0;fcState.known=new Set();fcState.learning=new Set();fcState.flipped=false;fcState.reviewMode=true;fcState.checkpointsDone=new Set([20,40,60,80,100]);showFCScreen('fc-s-study');renderCard();}
+
+function returnFromFullReview(){
+  const ret=fcState._fullReviewReturn;
+  if(!ret)return;
+  ret.reviewPairs.forEach((pair,miniIdx)=>{
+    if(fcState.known.has(miniIdx)){
+      ret.learning.delete(pair.origIdx);
+      ret.known.add(pair.origIdx);
+    } else if(fcState.learning.has(miniIdx)) {
+      ret.learning.add(pair.origIdx);
+      ret.known.delete(pair.origIdx);
+    }
+  });
+  fcState._fullReviewReturn=null;
+  fcState._checkpointReturn=null;
+  fcState.deck=ret.deck;
+  fcState.currentIdx=Math.min(fcState.currentIdx, Math.max(0, ret.deck.length-1));
+  fcState.known=ret.known;
+  fcState.learning=ret.learning;
+  fcState.checkpointsDone=ret.checkpoints;
+  fcState.flipped=false;
+  fcState.reviewMode=false;
+  showFCComplete();
+}
 
 function resetFCToMenu(){document.querySelectorAll('[data-fcsecid]').forEach(c=>c.classList.remove('selected'));fcState.selSection=null;document.getElementById('fc-start-btn').disabled=true;showFCScreen('fc-s-module');}
 

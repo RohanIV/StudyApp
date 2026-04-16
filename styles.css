@@ -279,6 +279,7 @@ body{background:var(--bg);color:var(--text);font-family:'Barlow',sans-serif;min-
 .tutor-input:focus-visible{outline:2px solid #34d399;outline-offset:2px;}
 .tutor-send-btn{background:linear-gradient(135deg,#10b981,#34d399);}
 .tutor-send-btn:hover{box-shadow:0 6px 28px rgba(16,185,129,.4);}
+
 .ex-exp{background:rgba(255,255,255,.03);border:1px solid var(--border);border-radius:10px;padding:14px;margin-top:12px;font-size:13px;color:var(--muted);line-height:1.6;}
 .ex-next-btn{width:100%;background:linear-gradient(135deg,rgba(0,191,255,.2),rgba(0,191,255,.1));border:2px solid rgba(0,191,255,.4);color:#00bfff;border-radius:10px;padding:14px;font-family:'Barlow Condensed',sans-serif;font-size:17px;font-weight:800;letter-spacing:1px;cursor:pointer;margin-top:12px;transition:all .2s;}
 .ex-next-btn:hover{background:rgba(0,191,255,.25);transform:translateY(-1px);}
