@@ -266,10 +266,14 @@
     <button class="back-btn" onclick="goBackFC('fc-s-section')">← BACK</button>
     <div class="fc-meta">
       <span class="cur-sec-tag" id="fc-sec-tag" style="border-color:rgba(255,187,0,.3);color:var(--yellow);background:rgba(255,187,0,.07);">—</span>
-      <div class="fc-counters">
-        <span class="fc-count-item known">✓ <span id="fc-known-count">0</span></span>
-        <span class="fc-count-item learning">↩ <span id="fc-learning-count">0</span></span>
-        <span style="font-family:'Share Tech Mono',monospace;font-size:11px;color:var(--muted);" id="fc-card-num">1 / 20</span>
+      <div class="fc-meta-right">
+        <span class="fc-mode-chip" id="fc-mode-chip">Learning deck</span>
+        <span class="fc-streak-chip" id="fc-streak-chip"></span>
+        <div class="fc-counters">
+          <span class="fc-count-item known">✓ <span id="fc-known-count">0</span></span>
+          <span class="fc-count-item learning">↩ <span id="fc-learning-count">0</span></span>
+          <span style="font-family:'Share Tech Mono',monospace;font-size:11px;color:var(--muted);" id="fc-card-num">1 / 20</span>
+        </div>
       </div>
     </div>
     <div class="prog-wrap">
@@ -305,6 +309,18 @@
       <button class="fc-learning-btn" onclick="markCard('learning')">↩ Still Learning</button>
     </div>
 
+    <div class="fc-options-row">
+      <label class="fc-auto-label">
+        <input type="checkbox" id="fc-auto-next-toggle" checked>
+        <span>Auto-next after rating</span>
+      </label>
+      <div style="display:flex;align-items:center;gap:8px;">
+        <button type="button" class="fc-undo-btn" onclick="undoLastFlashcard()">Undo last</button>
+        <button type="button" class="fc-undo-btn" onclick="adjustFlashcardFont(-0.1)">A−</button>
+        <button type="button" class="fc-undo-btn" onclick="adjustFlashcardFont(0.1)">A+</button>
+      </div>
+    </div>
+
     <div class="fc-controls">
       <button class="fc-btn fc-prev" id="fc-prev-btn" onclick="fcPrev()" disabled>← Prev</button>
       <button class="fc-btn fc-flip-btn" onclick="flipCard()">↕ Flip</button>
@@ -319,11 +335,12 @@
       <div class="fc-complete-title">Deck Complete!</div>
       <div class="fc-complete-sub">You've gone through all the cards in this deck.</div>
       <div class="fc-complete-stats">
-        <div class="sc-item"><div class="f-stat-num" style="color:var(--green)" id="fc-final-known">0</div><div class="sc-lbl">Know It</div></div>
+        <div class="sc-item"><div class="f-stat-num" style="color:var(--green)" id="fc-final-known">0</div><div class="sc-lbl">Mastered</div></div>
         <div class="sc-item"><div class="f-stat-num" style="color:var(--yellow)" id="fc-final-learning">0</div><div class="sc-lbl">Still Learning</div></div>
         <div class="sc-item"><div class="f-stat-num" style="color:var(--accent)" id="fc-final-total">0</div><div class="sc-lbl">Total</div></div>
       </div>
       <div class="final-fb" id="fc-final-fb"></div>
+      <div id="fc-section-summary"></div>
       <button class="fc-review-btn" id="fc-review-btn" onclick="reviewLearning()">Review Still Learning ↩</button>
       <button class="restart-btn" onclick="resetFCToMenu()">NEW DECK →</button>
     </div>

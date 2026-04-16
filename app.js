@@ -240,13 +240,23 @@ function normalizeTutorText(text) {
     .replace(/\r/g, '')
     .trim();
 }
+function isDirectTutorQuestion(text) {
+  const t = String(text || '').trim().toLowerCase();
+  if (!t) return false;
+  if (/^(what is|what are|define|explain|difference between|compare|tell me about|how does)/.test(t)) return true;
+  if (/\b(vs\.?|versus)\b/.test(t)) return true;
+  if (/^(why is|which is|which one|what is the best|best answer|correct answer|why is .* right|why is .* wrong)/.test(t)) return false;
+  if (/\b(a\.|b\.|c\.|d\.|option|answer choice|correct answer|wrong answer)\b/.test(t)) return false;
+  return false;
+}
 function buildTutorPrompt(userText) {
   const ctx = getTutorContext();
   const history = tutorState.messages
     .slice(-6)
     .map((m) => `${m.role === 'user' ? 'User' : 'Tutor'}: ${m.text}`)
     .join('\n');
-  return `You are a friendly CompTIA A+ tutor. Give accurate, concise, practical explanations.\nRules:\n- Keep answers under 220 words unless asked for more.\n- Use bullet points when helpful.\n- If unsure, say what to verify.\n- Use simple language first, then a quick technical note.\n\nCurrent study context:\n- Section: ${ctx.secId || 'none'}\n- Section label: ${ctx.label}\n- Focus notes: ${ctx.focus || 'none'}\n\nRecent conversation:\n${history || 'none'}\n\nStudent question:\n${userText}`;
+  const directMode = isDirectTutorQuestion(userText);
+  return `You are a friendly CompTIA A+ tutor. Give accurate, concise, practical explanations.\nRules:\n- Keep answers under 220 words unless asked for more.\n- Use bullet points when helpful.\n- If unsure, say what to verify.\n- Use simple language first, then a quick technical note.\n- Do NOT use quiz-marking language unless the student is clearly asking about a quiz answer.\n- Do NOT say "why it is right", "why it is wrong", or discuss wrong answers unless the student asks for exam-question reasoning.\n- If the student asks for a definition, explanation, or comparison, answer directly and naturally first.\n${directMode ? '- This is a direct knowledge question. Give a straightforward answer in plain English, then a short technical note if useful.\n- For comparisons, briefly define each item, then give the key difference.\n- Do not mention wrong answers or exam strategy.\n' : '- If the student is asking about a quiz/exam-style question, you may explain why the correct answer fits and why a common wrong answer is wrong.\n'}\nCurrent study context:\n- Section: ${ctx.secId || 'none'}\n- Section label: ${ctx.label}\n- Focus notes: ${ctx.focus || 'none'}\n\nRecent conversation:\n${history || 'none'}\n\nStudent question:\n${userText}`;
 }
 async function sendTutorMessage() {
   const input = document.getElementById('tutor-input');
@@ -1612,7 +1622,26 @@ function resetToMenu(){document.querySelectorAll('.sec-card').forEach(c=>c.class
 // ═══════════════════════════════════════════════════════
 // FLASHCARD STATE & LOGIC
 // ═══════════════════════════════════════════════════════
-let fcState = {selModule:null,selSection:null,deck:[],currentIdx:0,known:new Set(),learning:new Set(),flipped:false,reviewMode:false,checkpointsDone:new Set(),_checkpointReturn:null,_fullReviewReturn:null};
+let fcState = {
+  selModule:null,
+  selSection:null,
+  deck:[],
+  currentIdx:0,
+  known:new Set(),
+  learning:new Set(),
+  flipped:false,
+  reviewMode:false,
+  checkpointsDone:new Set(),
+  _checkpointReturn:null,
+  _fullReviewReturn:null,
+  autoNext:true,
+  lastAction:null,
+  streak:0,
+  bestStreak:0,
+  fontScale:1,
+  _touchStartX:0,
+  _suppressFlipOnce:false
+};
 
 function selectFCModule(mod){document.querySelectorAll('[data-fcmod]').forEach(c=>c.classList.remove('selected'));document.querySelector(`[data-fcmod="${mod}"]`).classList.add('selected');fcState.selModule=mod;document.getElementById('fc-mod-next-btn').disabled=false;}
 function goToFCSections(){if(!fcState.selModule)return;buildFCSectionGrid();const t={mod1:'Module 1 — Mobile Devices',mod2:'Module 2 — Networking',mod3:'Module 3 — Hardware',mod4:'Module 4 — Operating Systems',mod5:'Module 5 — Virtualization & Cloud',mod6:'Module 6 — Security',all:'All Modules'};document.getElementById('fc-sec-title').textContent=t[fcState.selModule]||'Choose a Deck';showFCScreen('fc-s-section');}
@@ -1625,14 +1654,33 @@ function showFCScreen(id){document.querySelectorAll('#fc-pane .screen').forEach(
 function startFlashcards(){if(!fcState.selSection)return;let cards=[];if(fcState.selSection==='all'){let secs=[];if(fcState.selModule==='all')secs=[...MODULES.mod1.sections,...MODULES.mod2.sections,...MODULES.mod3.sections,...MODULES.mod4.sections,...MODULES.mod5.sections,...MODULES.mod6.sections];else if(MODULES[fcState.selModule])secs=MODULES[fcState.selModule].sections;secs.forEach(s=>{getMergedFlashDeck(s.id).forEach(c=>cards.push({...c,sec:s.id,secLabel:s.label,mod:s.mod}));});}else{const secId=fcState.selSection;const allS=[...MODULES.mod1.sections,...MODULES.mod2.sections,...MODULES.mod3.sections,...MODULES.mod4.sections,...MODULES.mod5.sections,...MODULES.mod6.sections];const secInfo=allS.find(s=>s.id===secId);getMergedFlashDeck(secId).forEach(c=>cards.push({...c,sec:secId,secLabel:secInfo?secInfo.label:'',mod:secInfo?secInfo.mod:'mod2'}));}
 // Shuffle
 for(let i=cards.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[cards[i],cards[j]]=[cards[j],cards[i]];}
-fcState.deck=cards;fcState.currentIdx=0;fcState.known=new Set();fcState.learning=new Set();fcState.flipped=false;fcState.reviewMode=false;fcState.checkpointsDone=new Set();fcState._checkpointReturn=null;fcState._fullReviewReturn=null;showFCScreen('fc-s-study');renderCard();}
+fcState.deck=cards;fcState.currentIdx=0;fcState.known=new Set();fcState.learning=new Set();fcState.flipped=false;fcState.reviewMode=false;fcState.checkpointsDone=new Set();fcState._checkpointReturn=null;fcState._fullReviewReturn=null;fcState.streak=0;fcState.bestStreak=0;fcState.fontScale=1;document.documentElement.style.setProperty('--fc-scale','1');showFCScreen('fc-s-study');renderCard();}
 
 function renderCard(){const card=fcState.deck[fcState.currentIdx];if(!card)return;const total=fcState.deck.length;const done=fcState.known.size+fcState.learning.size;const pct=Math.round((done/total)*100);document.getElementById('fc-prog-fill').style.width=pct+'%';document.getElementById('fc-prog-txt').textContent=pct+'%';document.getElementById('fc-card-num').textContent=`${fcState.currentIdx+1} / ${total}`;document.getElementById('fc-card-num2').textContent=`Card ${fcState.currentIdx+1} of ${total}`;document.getElementById('fc-known-count').textContent=fcState.known.size;document.getElementById('fc-learning-count').textContent=fcState.learning.size;const isM1=card.mod==='mod1';const isM3=card.mod==='mod3';const isM4=card.mod==='mod4';const isM5=card.mod==='mod5';const isM6=card.mod==='mod6';const secLabel=`${card.sec} — ${card.secLabel}`;document.getElementById('fc-front-section').textContent=secLabel;document.getElementById('fc-back-section').textContent=secLabel;document.getElementById('fc-term').textContent=card.t;document.getElementById('fc-def').innerHTML=card.d;const frontFace=document.getElementById('fc-front');const backFace=document.getElementById('fc-back');const secTag=document.getElementById('fc-sec-tag');frontFace.className=`fc-face fc-front${isM1?' m1-card':isM3?' m3-card':isM4?' m4-card':isM5?' m5-card':isM6?' m6-card':''}`;backFace.className=`fc-face fc-back${isM1?' m1-card':isM3?' m3-card':isM4?' m4-card':isM5?' m5-card':isM6?' m6-card':''}`;if(isM1){secTag.style.borderColor='rgba(168,85,247,.3)';secTag.style.color='var(--purple)';secTag.style.background='rgba(168,85,247,.07)';}else if(isM3){secTag.style.borderColor='rgba(0,255,136,.3)';secTag.style.color='var(--green)';secTag.style.background='rgba(0,255,136,.07)';}else if(isM4){secTag.style.borderColor='rgba(255,140,0,.3)';secTag.style.color='#ff8c00';secTag.style.background='rgba(255,140,0,.07)';}else if(isM5){secTag.style.borderColor='rgba(0,200,150,.3)';secTag.style.color='#00c896';secTag.style.background='rgba(0,200,150,.07)';}else if(isM6){secTag.style.borderColor='rgba(239,68,68,.3)';secTag.style.color='#ef4444';secTag.style.background='rgba(239,68,68,.07)';}else{secTag.style.borderColor='rgba(255,187,0,.3)';secTag.style.color='var(--yellow)';secTag.style.background='rgba(255,187,0,.07)';}
-secTag.textContent=`${card.sec} — ${card.secLabel}`;// Always reset to question side when rendering a card
-fcState.flipped=false;document.getElementById('flip-card').classList.remove('flipped');
+secTag.textContent=`${card.sec} — ${card.secLabel}`;const modeEl=document.getElementById('fc-mode-chip');if(modeEl){let label='Learning deck';if(fcState.reviewMode&&fcState._checkpointReturn)label='Quick review';else if(fcState.reviewMode&&fcState._fullReviewReturn)label='Reviewing missed cards';modeEl.textContent=label;}const streakEl=document.getElementById('fc-streak-chip');if(streakEl){streakEl.textContent=fcState.streak>=3?`Streak: ${fcState.streak}`:'';}// Always reset to question side when rendering a card
+// Compute full-session known/learning counts even during mini review decks
+let fullKnown=fcState.known.size;let fullLearning=fcState.learning.size;
+if(fcState.reviewMode&&fcState._fullReviewReturn){const ret=fcState._fullReviewReturn;const newlyKnown=fcState.known.size;fullKnown=ret.known.size+newlyKnown;fullLearning=Math.max(0,ret.learning.size-newlyKnown);}
+else if(fcState.reviewMode&&fcState._checkpointReturn){const ret=fcState._checkpointReturn;const newlyKnown=fcState.known.size;fullKnown=ret.known.size+newlyKnown;fullLearning=Math.max(0,ret.learning.size-newlyKnown);}
+document.getElementById('fc-known-count').textContent=fullKnown;document.getElementById('fc-learning-count').textContent=fullLearning;
+fcState.flipped=false;document.getElementById('flip-card').classList.remove('flipped');const autoToggle=document.getElementById('fc-auto-next-toggle');if(autoToggle)autoToggle.checked=!!fcState.autoNext;
 document.getElementById('fc-verdict').style.display='none';document.getElementById('verdict-hint').classList.remove('hidden');document.getElementById('verdict-hint').textContent='Flip the card to see the definition, then rate yourself';document.getElementById('fc-prev-btn').disabled=fcState.currentIdx===0;document.getElementById('fc-next-btn').disabled=fcState.currentIdx>=fcState.deck.length-1;}
 
-function flipCard(){fcState.flipped=!fcState.flipped;document.getElementById('flip-card').classList.toggle('flipped',fcState.flipped);if(fcState.flipped){document.getElementById('fc-verdict').style.display='grid';document.getElementById('verdict-hint').classList.add('hidden');}else{document.getElementById('fc-verdict').style.display='none';document.getElementById('verdict-hint').classList.remove('hidden');}}
+function flipCard(){
+  if(fcState._suppressFlipOnce){
+    fcState._suppressFlipOnce=false;
+    return;
+  }
+  fcState.flipped=!fcState.flipped;
+  document.getElementById('flip-card').classList.toggle('flipped',fcState.flipped);
+  if(fcState.flipped){
+    document.getElementById('fc-verdict').style.display='grid';
+    document.getElementById('verdict-hint').classList.add('hidden');
+  }else{
+    document.getElementById('fc-verdict').style.display='none';
+    document.getElementById('verdict-hint').classList.remove('hidden');
+  }
+}
 
 function showCheckpoint(pct,onContinue){const learningCount=fcState.learning.size;const icon=pct===100?'🏁':pct>=80?'🔥':pct>=60?'⚡':pct>=40?'💡':'✅';const msgs={20:'Keep going — you\'re building momentum!',40:'Nearly halfway! Good rhythm.',60:'Over halfway — you\'re doing great!',80:'Almost there — final stretch!',100:'You\'ve seen every card!'};const overlay=document.createElement('div');overlay.className='fc-checkpoint-overlay';overlay.id='fc-checkpoint-overlay';overlay.innerHTML=`<div class="fc-checkpoint-box"><div class="fc-checkpoint-icon">${icon}</div><div class="fc-checkpoint-pct">${pct}%</div><div class="fc-checkpoint-title">Checkpoint!</div><div class="fc-checkpoint-sub">${msgs[pct]||''}</div>${learningCount>0?`<div class="fc-checkpoint-learning">📚 ${learningCount} card${learningCount===1?'':'s'} still learning</div>`:'<div class="fc-checkpoint-learning" style="border-color:rgba(0,255,136,.3);color:var(--green);background:rgba(0,255,136,.08)">✓ All cards known so far!</div>'}<div class="fc-cp-btn-row">${learningCount>0?`<button class="fc-cp-review-btn" onclick="document.getElementById('fc-checkpoint-overlay').remove();reviewCheckpointCards()">↩ Quick Review (${learningCount})</button>`:''}  <button class="fc-cp-continue-btn" onclick="document.getElementById('fc-checkpoint-overlay').remove();${onContinue}">Continue →</button></div></div>`;document.body.appendChild(overlay);}
 function reviewCheckpointCards(){
@@ -1660,10 +1708,11 @@ function reviewCheckpointCards(){
   showFCScreen('fc-s-study');
   renderCard();
 }
-function markCard(verdict){if(verdict==='known'){fcState.known.add(fcState.currentIdx);fcState.learning.delete(fcState.currentIdx);}else{fcState.learning.add(fcState.currentIdx);fcState.known.delete(fcState.currentIdx);}
+function markCard(verdict){const idx=fcState.currentIdx;let prev='none';if(fcState.known.has(idx))prev='known';else if(fcState.learning.has(idx))prev='learning';fcState.lastAction={idx,prev,verdict};if(verdict==='known'){fcState.known.add(idx);fcState.learning.delete(idx);fcState.streak=(fcState.streak||0)+1;if(fcState.streak>=(fcState.bestStreak||0))fcState.bestStreak=fcState.streak;}else{fcState.learning.add(idx);fcState.known.delete(idx);fcState.streak=0;}
 // Auto-advance
 const total=fcState.deck.length;const done=fcState.known.size+fcState.learning.size;const pct=Math.round((done/total)*100);const checkpointPcts=[20,40,60,80,100];const hit=checkpointPcts.find(p=>pct>=p&&!fcState.checkpointsDone.has(p));if(hit){fcState.checkpointsDone.add(hit);if(hit===100){showCheckpoint(100, fcState._checkpointReturn ? 'returnFromCheckpointReview()' : 'showFCComplete()');}else{showCheckpoint(hit,'fcNext()');return;}}
 const isLast=fcState.currentIdx>=fcState.deck.length-1;
+if(!fcState.autoNext){renderCard();return;}
 if(isLast){
   if(fcState._checkpointReturn){returnFromCheckpointReview();}
   else if(fcState._fullReviewReturn){returnFromFullReview();}
@@ -1692,8 +1741,16 @@ function returnFromCheckpointReview(){
   const ret=fcState._checkpointReturn;
   // Merge mini-review results: cards marked Known → remove from original learning set
   ret.reviewPairs.forEach((pair,miniIdx)=>{
-    if(fcState.known.has(miniIdx)){ret.learning.delete(pair.origIdx);}
-    // Cards still marked learning in mini-review stay in original learning set
+    if(fcState.known.has(miniIdx)){
+      // This card was previously "Still Learning" but is now known.
+      // Promote it from learning → known in the full deck.
+      ret.learning.delete(pair.origIdx);
+      ret.known.add(pair.origIdx);
+    } else if (fcState.learning.has(miniIdx)) {
+      // Still learning after mini-review: keep it in the learning set.
+      ret.learning.add(pair.origIdx);
+      ret.known.delete(pair.origIdx);
+    }
   });
   fcState._checkpointReturn=null;
   // Restore main deck state
@@ -1709,7 +1766,56 @@ function returnFromCheckpointReview(){
 }
 function fcPrev(){if(fcState.currentIdx>0){fcState.currentIdx--;renderCard();}}
 
-function showFCComplete(){showFCScreen('fc-s-complete');document.getElementById('fc-final-known').textContent=fcState.known.size;document.getElementById('fc-final-learning').textContent=fcState.learning.size;document.getElementById('fc-final-total').textContent=fcState.deck.length;const pct=Math.round((fcState.known.size/fcState.deck.length)*100);let fb='';if(pct>=90)fb='Outstanding! You know this material cold.';else if(pct>=70)fb='Solid progress! Review the "Still Learning" cards to close the gaps.';else if(pct>=50)fb='Getting there — click "Review Still Learning" to focus on the cards you missed.';else fb='Keep going! Use "Review Still Learning" to drill the tricky ones before moving to the quiz.';document.getElementById('fc-final-fb').textContent=fb;const reviewBtn=document.getElementById('fc-review-btn');if(fcState.learning.size===0){reviewBtn.style.display='none';}else{reviewBtn.style.display='inline-block';reviewBtn.textContent=`Review Still Learning (${fcState.learning.size}) ↩`;}}
+function showFCComplete(){
+  showFCScreen('fc-s-complete');
+  const mastered = fcState.known.size;
+  const stillLearning = fcState.learning.size;
+  const total = fcState.deck.length || 0;
+
+  document.getElementById('fc-final-known').textContent = mastered;
+  document.getElementById('fc-final-learning').textContent = stillLearning;
+  document.getElementById('fc-final-total').textContent = total;
+
+  const pct = total ? Math.round((mastered / total) * 100) : 0;
+  let fb = `Mastered this session: ${mastered}. Still learning: ${stillLearning}. `;
+  if (pct >= 90) fb += 'Outstanding! You know this material cold.';
+  else if (pct >= 70) fb += 'Strong progress — focus remaining time on the "Still Learning" cards.';
+  else if (pct >= 50) fb += 'Good start — use "Review Still Learning" to drill the tricky ones.';
+  else fb += 'Keep going — another pass through this deck will really help.';
+  document.getElementById('fc-final-fb').textContent = fb;
+
+  // Per-section progress summary
+  const sectionStats = {};
+  fcState.deck.forEach((card, idx) => {
+    const secId = card.sec || '—';
+    if (!sectionStats[secId]) {
+      sectionStats[secId] = { label: card.secLabel || secId, total: 0, known: 0 };
+    }
+    sectionStats[secId].total += 1;
+    if (fcState.known.has(idx)) {
+      sectionStats[secId].known += 1;
+    }
+  });
+  const secSummaryEl = document.getElementById('fc-section-summary');
+  if (secSummaryEl) {
+    const rows = Object.keys(sectionStats).sort().map((secId) => {
+      const s = sectionStats[secId];
+      const secPct = s.total ? Math.round((s.known / s.total) * 100) : 0;
+      return `<div style="font-size:12px;color:var(--muted);margin-bottom:4px;">
+        <strong>${secId}</strong> — ${s.label}: ${secPct}% mastered (${s.known}/${s.total})
+      </div>`;
+    }).join('');
+    secSummaryEl.innerHTML = rows || '';
+  }
+
+  const reviewBtn = document.getElementById('fc-review-btn');
+  if (fcState.learning.size === 0) {
+    reviewBtn.style.display = 'none';
+  } else {
+    reviewBtn.style.display = 'inline-block';
+    reviewBtn.textContent = `Review Still Learning (${fcState.learning.size}) ↩`;
+  }
+}
 
 function reviewLearning(){// Rebuild deck from learning set only (end-of-deck full review)
 const reviewPairs=[];fcState.learning.forEach(idx=>{reviewPairs.push({card:fcState.deck[idx],origIdx:idx});});for(let i=reviewPairs.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[reviewPairs[i],reviewPairs[j]]=[reviewPairs[j],reviewPairs[i]];}
@@ -1738,6 +1844,60 @@ function returnFromFullReview(){
   fcState.flipped=false;
   fcState.reviewMode=false;
   showFCComplete();
+}
+
+function undoLastFlashcard(){
+  const a=fcState.lastAction;
+  if(!a)return;
+  const idx=a.idx;
+  fcState.known.delete(idx);
+  fcState.learning.delete(idx);
+  if(a.prev==='known'){fcState.known.add(idx);}
+  else if(a.prev==='learning'){fcState.learning.add(idx);}
+  fcState.lastAction=null;
+  renderCard();
+}
+
+function adjustFlashcardFont(delta){
+  const next=(fcState.fontScale||1)+delta;
+  const clamped=Math.max(0.8,Math.min(1.4,next));
+  fcState.fontScale=clamped;
+  document.documentElement.style.setProperty('--fc-scale',String(clamped));
+}
+
+function handleFlashcardKey(e){
+  const fcStudy=document.getElementById('fc-s-study');
+  if(!fcStudy||!fcStudy.classList.contains('active'))return;
+  const tag=(e.target&&e.target.tagName)||'';
+  if(/input|textarea|select/i.test(tag))return;
+  if(e.key===' '||e.key==='Spacebar'||e.key==='Enter'){
+    e.preventDefault();
+    flipCard();
+  }else if(e.key==='ArrowRight'){
+    e.preventDefault();
+    fcNext();
+  }else if(e.key==='ArrowLeft'){
+    e.preventDefault();
+    fcPrev();
+  }
+}
+
+function wireFlashcardGesturesAndKeys(){
+  window.addEventListener('keydown',handleFlashcardKey);
+  const cont=document.getElementById('flip-container');
+  if(!cont)return;
+  cont.addEventListener('touchstart',function(e){
+    if(!e.touches||!e.touches.length)return;
+    fcState._touchStartX=e.touches[0].clientX;
+  },{passive:true});
+  cont.addEventListener('touchend',function(e){
+    if(!e.changedTouches||!e.changedTouches.length)return;
+    const endX=e.changedTouches[0].clientX;
+    const dx=endX-(fcState._touchStartX||0);
+    if(Math.abs(dx)<40)return;
+    fcState._suppressFlipOnce=true;
+    if(dx<0)fcNext();else fcPrev();
+  },{passive:true});
 }
 
 function resetFCToMenu(){document.querySelectorAll('[data-fcsecid]').forEach(c=>c.classList.remove('selected'));fcState.selSection=null;document.getElementById('fc-start-btn').disabled=true;showFCScreen('fc-s-module');}
@@ -1984,9 +2144,12 @@ function clearAllStats(){
   localStorage.removeItem('comptia_quiz_save');
   localStorage.removeItem('comptia_fc_save');
   localStorage.removeItem(LS_WRONG_FOCUS);
-  renderQuizStats();renderFCStats();
-  document.getElementById('quiz-resume-banner').innerHTML='';
-  document.getElementById('fc-resume-banner').innerHTML='';
+  renderQuizStats();
+  renderFCStats();
+  const qr=document.getElementById('quiz-resume-banner');
+  if(qr)qr.innerHTML='';
+  const fr=document.getElementById('fc-resume-banner');
+  if(fr)fr.innerHTML='';
   alert('All progress cleared.');
 }
 
@@ -2615,3 +2778,4 @@ wireTutorEnterKey();
 tutorState.messages = loadTutorHistory();
 renderTutorContextChip();
 renderTutorLog();
+wireFlashcardGesturesAndKeys();

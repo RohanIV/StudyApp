@@ -1,4 +1,4 @@
-﻿:root{--bg:#09101f;--surface:#111827;--surface2:#1a2235;--border:#1e3354;--accent:#00d4ff;--accent2:#0070ff;--green:#00ff88;--red:#ff3b5c;--yellow:#ffbb00;--purple:#a855f7;--text:#e2e8f0;--muted:#64748b;--card:#141c2e;}
+﻿:root{--bg:#09101f;--surface:#111827;--surface2:#1a2235;--border:#1e3354;--accent:#00d4ff;--accent2:#0070ff;--green:#00ff88;--red:#ff3b5c;--yellow:#ffbb00;--purple:#a855f7;--text:#e2e8f0;--muted:#64748b;--card:#141c2e;--fc-scale:1;}
 *{box-sizing:border-box;margin:0;padding:0;}
 body{background:var(--bg);color:var(--text);font-family:'Barlow',sans-serif;min-height:100vh;background-image:radial-gradient(ellipse at 15% 0%,rgba(0,112,255,.1) 0%,transparent 55%),radial-gradient(ellipse at 85% 100%,rgba(168,85,247,.07) 0%,transparent 55%);}
 .scan{position:fixed;inset:0;pointer-events:none;z-index:0;background:repeating-linear-gradient(0deg,transparent,transparent 2px,rgba(0,0,0,.025) 2px,rgba(0,0,0,.025) 4px);}
@@ -186,6 +186,9 @@ body{background:var(--bg);color:var(--text);font-family:'Barlow',sans-serif;min-
 
 /* ═══ FLASHCARD STYLES ═══ */
 .fc-meta{display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;flex-wrap:wrap;gap:8px;}
+.fc-meta-right{display:flex;align-items:center;gap:12px;flex-wrap:wrap;}
+.fc-mode-chip{font-family:'Share Tech Mono',monospace;font-size:10px;color:var(--muted);border-radius:999px;border:1px solid rgba(148,163,184,.55);padding:4px 9px;text-transform:uppercase;letter-spacing:.8px;background:rgba(15,23,42,.85);}
+.fc-streak-chip{font-family:'Share Tech Mono',monospace;font-size:10px;color:var(--green);opacity:.85;}
 .fc-prog-wrap{margin-bottom:20px;}
 .fc-prog-fill{background:linear-gradient(90deg,#b45309,var(--yellow));height:100%;border-radius:4px;transition:width .4s ease;}
 .fc-counters{display:flex;gap:12px;align-items:center;}
@@ -205,8 +208,8 @@ body{background:var(--bg);color:var(--text);font-family:'Barlow',sans-serif;min-
 .fc-section-label{font-family:'Share Tech Mono',monospace;font-size:10px;margin-bottom:16px;opacity:.5;letter-spacing:1px;text-transform:uppercase;}
 .fc-hint{font-size:11px;color:var(--muted);font-family:'Share Tech Mono',monospace;margin-top:14px;letter-spacing:1px;}
 .fc-front .fc-hint{color:rgba(255,187,0,.5);}
-.fc-term{font-family:'Barlow Condensed',sans-serif;font-size:28px;font-weight:800;color:var(--text);line-height:1.25;max-width:560px;}
-.fc-def{font-size:15px;line-height:1.7;color:#cbd5e1;max-width:580px;}
+.fc-term{font-family:'Barlow Condensed',sans-serif;font-size:calc(28px * var(--fc-scale));font-weight:800;color:var(--text);line-height:1.25;max-width:560px;}
+.fc-def{font-size:calc(15px * var(--fc-scale));line-height:1.7;color:#cbd5e1;max-width:580px;}
 .fc-def strong{color:var(--accent);}
 .fc-def .m1-strong{color:var(--purple);}
 .fc-num{font-family:'Share Tech Mono',monospace;font-size:12px;color:var(--muted);margin-bottom:10px;}
@@ -227,6 +230,11 @@ body{background:var(--bg);color:var(--text);font-family:'Barlow',sans-serif;min-
 .fc-known-btn:hover{background:rgba(0,255,136,.2);transform:translateY(-2px);}
 .fc-learning-btn{background:rgba(255,187,0,.1);border:2px solid rgba(255,187,0,.3);color:var(--yellow);border-radius:10px;padding:14px;font-family:'Barlow Condensed',sans-serif;font-size:16px;font-weight:800;letter-spacing:1px;text-transform:uppercase;cursor:pointer;transition:all .2s;}
 .fc-learning-btn:hover{background:rgba(255,187,0,.2);transform:translateY(-2px);}
+.fc-options-row{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:14px;font-family:'Share Tech Mono',monospace;font-size:10px;color:var(--muted);}
+.fc-auto-label{display:flex;align-items:center;gap:6px;cursor:pointer;}
+.fc-auto-label input{width:13px;height:13px;accent-color:var(--yellow);}
+.fc-undo-btn{background:transparent;border:1px solid var(--border);color:var(--muted);border-radius:8px;padding:6px 10px;font-size:10px;font-family:'Share Tech Mono',monospace;letter-spacing:.5px;text-transform:uppercase;cursor:pointer;transition:all .2s;}
+.fc-undo-btn:hover{border-color:var(--accent);color:var(--accent);}
 .fc-checkpoint-overlay{position:fixed;inset:0;background:rgba(5,10,25,.92);z-index:9999;display:flex;align-items:center;justify-content:center;animation:cpFadeIn .3s ease;}
 @keyframes cpFadeIn{from{opacity:0;transform:scale(.95)}to{opacity:1;transform:scale(1)}}
 .fc-checkpoint-box{background:linear-gradient(135deg,#0d1f35,#0a1628);border:2px solid rgba(255,187,0,.4);border-radius:20px;padding:36px 32px;max-width:400px;width:90%;text-align:center;box-shadow:0 0 40px rgba(255,187,0,.15);}
