@@ -20,7 +20,7 @@
       <span class="badge">220-1201/1202</span>
       <span class="logo-txt">CompTIA A+</span>
     </div>
-    <div class="logo-sub">STUDY TOOL // MODULES 1–6</div>
+    <div class="logo-sub">STUDY TOOL // MODULES 1–7</div>
   </div>
   <div class="score-bar" id="score-display" style="display:none">
     <div class="sc-item"><div class="sc-num c" id="sc-correct">0</div><div class="sc-lbl">Correct</div></div>
@@ -71,8 +71,8 @@
         <div class="mod-glow all-glow"></div>
         <div class="mod-num all-c">ALL MODULES</div>
         <div class="mod-name">Complete Course</div>
-        <div class="mod-desc">Covers everything from Mobile Devices to Networking</div>
-        <div class="mod-count">220-1201 + 220-1202 • 77 SECTIONS</div>
+        <div class="mod-desc">Covers everything from Mobile Devices to Operational Procedures</div>
+        <div class="mod-count">220-1201 + 220-1202 • 90 SECTIONS</div>
       </div>
       <div class="mod-group-label">📘 Core 1 — 220-1201</div>
       <div class="module-card m1" data-mod="mod1" onclick="selectModule('mod1')">
@@ -99,6 +99,14 @@
         <div class="mod-desc">Displays, cables, storage, CPUs, motherboards, PSUs &amp; printers</div>
         <div class="mod-count">12 SECTIONS</div>
       </div>
+      <div class="module-card m5" data-mod="mod5" onclick="selectModule('mod5')">
+        <div class="mod-glow m5-glow"></div>
+        <div class="core-badge core1-badge">CORE 1 — 220-1201</div>
+        <div class="mod-num m5-c">MODULE 5</div>
+        <div class="mod-name">Virtualization &amp; Cloud</div>
+        <div class="mod-desc">VMs, hypervisors, cloud models, services &amp; productivity tools</div>
+        <div class="mod-count">3 SECTIONS</div>
+      </div>
       <div class="mod-group-label">📗 Core 2 — 220-1202</div>
       <div class="module-card m4" data-mod="mod4" onclick="selectModule('mod4')">
         <div class="mod-glow m4-glow"></div>
@@ -108,14 +116,6 @@
         <div class="mod-desc">Windows, macOS, Linux, tools, settings &amp; app installation</div>
         <div class="mod-count">21 SECTIONS</div>
       </div>
-      <div class="module-card m5" data-mod="mod5" onclick="selectModule('mod5')">
-        <div class="mod-glow m5-glow"></div>
-        <div class="core-badge core1-badge">CORE 1 — 220-1201</div>
-        <div class="mod-num m5-c">MODULE 5</div>
-        <div class="mod-name">Virtualization &amp; Cloud</div>
-        <div class="mod-desc">VMs, hypervisors, cloud models, services &amp; productivity tools</div>
-        <div class="mod-count">3 SECTIONS</div>
-      </div>
       <div class="module-card m6" data-mod="mod6" onclick="selectModule('mod6')">
         <div class="mod-glow m6-glow"></div>
         <div class="core-badge core2-badge">CORE 2 — 220-1202</div>
@@ -123,6 +123,14 @@
         <div class="mod-name">Security</div>
         <div class="mod-desc">Physical, logical, malware, encryption, threats &amp; browser security</div>
         <div class="mod-count">20 SECTIONS</div>
+      </div>
+      <div class="module-card m7" data-mod="mod7" onclick="selectModule('mod7')">
+        <div class="mod-glow m7-glow"></div>
+        <div class="core-badge core2-badge">CORE 2 — 220-1202</div>
+        <div class="mod-num m7-c">MODULE 7</div>
+        <div class="mod-name">Operational Procedures</div>
+        <div class="mod-desc">Documentation, change control, backup, safety, policy, scripting &amp; professionalism</div>
+        <div class="mod-count">13 SECTIONS</div>
       </div>
     </div>
     <button class="start-btn" id="mod-next-btn" disabled onclick="goToSections()">CHOOSE SECTIONS →</button>
@@ -195,8 +203,8 @@
         <div class="mod-glow all-glow"></div>
         <div class="mod-num all-c">ALL MODULES</div>
         <div class="mod-name">Full Deck</div>
-        <div class="mod-desc">Every key term across all six modules (flashcards + quiz bank, deduped)</div>
-        <div class="mod-count">220-1201 + 220-1202 • 853 CARDS • 77 SECTIONS</div>
+        <div class="mod-desc">Every key term across all modules (flashcards + quiz bank, deduped)</div>
+        <div class="mod-count">220-1201 + 220-1202 • 90 SECTIONS</div>
       </div>
       <div class="mod-group-label">📘 Core 1 — 220-1201</div>
       <div class="module-card m1" data-fcmod="mod1" onclick="selectFCModule('mod1')">
@@ -223,6 +231,14 @@
         <div class="mod-desc">Displays, cables, storage, CPUs, PSUs &amp; printers</div>
         <div class="mod-count">181 CARDS • 12 SECTIONS</div>
       </div>
+      <div class="module-card m5" data-fcmod="mod5" onclick="selectFCModule('mod5')">
+        <div class="mod-glow m5-glow"></div>
+        <div class="core-badge core1-badge">CORE 1 — 220-1201</div>
+        <div class="mod-num m5-c">MODULE 5</div>
+        <div class="mod-name">Virtualization &amp; Cloud</div>
+        <div class="mod-desc">VMs, hypervisors, cloud models, services &amp; productivity tools</div>
+        <div class="mod-count">60 CARDS • 3 SECTIONS</div>
+      </div>
       <div class="mod-group-label">📗 Core 2 — 220-1202</div>
       <div class="module-card m4" data-fcmod="mod4" onclick="selectFCModule('mod4')">
         <div class="mod-glow m4-glow"></div>
@@ -232,14 +248,6 @@
         <div class="mod-desc">Windows, macOS, Linux, tools, settings &amp; app installation</div>
         <div class="mod-count">220 CARDS • 21 SECTIONS</div>
       </div>
-      <div class="module-card m5" data-fcmod="mod5" onclick="selectFCModule('mod5')">
-        <div class="mod-glow m5-glow"></div>
-        <div class="core-badge core1-badge">CORE 1 — 220-1201</div>
-        <div class="mod-num m5-c">MODULE 5</div>
-        <div class="mod-name">Virtualization &amp; Cloud</div>
-        <div class="mod-desc">VMs, hypervisors, cloud models, services &amp; productivity tools</div>
-        <div class="mod-count">60 CARDS • 3 SECTIONS</div>
-      </div>
       <div class="module-card m6" data-fcmod="mod6" onclick="selectFCModule('mod6')">
         <div class="mod-glow m6-glow"></div>
         <div class="core-badge core2-badge">CORE 2 — 220-1202</div>
@@ -247,6 +255,14 @@
         <div class="mod-name">Security</div>
         <div class="mod-desc">Physical, logical, malware, encryption, threats &amp; browser security</div>
         <div class="mod-count">149 CARDS • 20 SECTIONS</div>
+      </div>
+      <div class="module-card m7" data-fcmod="mod7" onclick="selectFCModule('mod7')">
+        <div class="mod-glow m7-glow"></div>
+        <div class="core-badge core2-badge">CORE 2 — 220-1202</div>
+        <div class="mod-num m7-c">MODULE 7</div>
+        <div class="mod-name">Operational Procedures</div>
+        <div class="mod-desc">Ticketing, policy, backup/recovery, safety, scripting and support process</div>
+        <div class="mod-count">13+ SECTIONS</div>
       </div>
     </div>
     <button class="start-btn fc-start-btn" id="fc-mod-next-btn" disabled onclick="goToFCSections()">CHOOSE DECK →</button>
