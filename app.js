@@ -326,7 +326,32 @@ function askAboutCurrentQuestion() {
   } catch (_) {
     return;
   }
-  const prompt = `I got this quiz question and need help understanding it.\nQuestion: ${q.question || ''}\nPlease explain the key concept in simple terms, why the correct answer is right, and why one common wrong answer is wrong.`;
+  const letters = ['A','B','C','D'];
+  const correctIdx = typeof q.correct === 'number' ? q.correct : 0;
+  const correctLetter = letters[correctIdx] || 'A';
+  const correctText = String((q.options && q.options[correctIdx]) || '').replace(/^[A-D]\.\s*/,'').trim();
+  const bankExp = String(q.explanation || '').replace(/<[^>]+>/g,' ').replace(/\s+/g,' ').trim();
+  const optionsText = (q.options || []).map((opt, i) => `${letters[i]}. ${String(opt).replace(/^[A-D]\.\s*/,'').trim()}`).join('\n');
+  const prompt = `I got this quiz question and need help understanding it.
+
+NON-NEGOTIABLE FACTS (DO NOT CONTRADICT):
+- Correct answer is ${correctLetter}
+- Correct option text: ${correctText}
+
+Question:
+${q.question || ''}
+
+Options:
+${optionsText}
+
+Official explanation from app:
+${bankExp || '(none)'}
+
+Please:
+1) Explain the key concept in simple terms.
+2) Explain why ${correctLetter} is correct.
+3) Give one common wrong-answer trap (without changing the correct answer).
+4) Keep the explanation consistent with the non-negotiable facts above.`;
   switchTab('tutor');
   const input = document.getElementById('tutor-input');
   if (input) input.value = prompt;
@@ -1614,7 +1639,28 @@ if(!question)question=getBankQuestion(sec);if(!question){area.innerHTML=`<div cl
 function getBankQuestion(secId){const bank=BANK[secId];if(!bank||bank.length===0){const fb=Object.keys(BANK)[0];return getBankQuestion(fb);}if(!quizState.bankUsed[secId])quizState.bankUsed[secId]=[];const used=quizState.bankUsed[secId];const avail=bank.map((_,i)=>i).filter(i=>!used.includes(i));let idx;if(avail.length>0){idx=avail[Math.floor(Math.random()*avail.length)];}else{quizState.bankUsed[secId]=[];idx=Math.floor(Math.random()*bank.length);}quizState.bankUsed[secId].push(idx);const q=bank[idx];return{question:q.q,options:q.o,correct:q.c,explanation:q.e,scenario:q.sc||'',fromBank:true};}
 async function generateAIQuestion(secId){const allS=[...MODULES.mod1.sections,...MODULES.mod2.sections,...MODULES.mod3.sections,...MODULES.mod4.sections,...MODULES.mod5.sections,...MODULES.mod6.sections];const secInfo=allS.find(s=>s.id===secId);const mod=secInfo&&secInfo.mod;const notes=mod==='mod1'?NOTES_M1:mod==='mod3'?NOTES_M3:mod==='mod4'?NOTES_M4:mod==='mod5'?NOTES_M5:mod==='mod6'?NOTES_M6:NOTES_M2;const focus=SECTION_FOCUS[secId]||'';const avoid=quizState.usedTopics.slice(-5).join(', ');const prompt=`You are a CompTIA A+ exam question writer for 220-1201/220-1202. Generate ONE authentic exam-style question.\n\nSTUDY NOTES:\n${notes}\n\nSECTION: ${focus}\n${avoid?`AVOID repeating these recent topics: ${avoid}`:''}\n\nREQUIREMENTS:\n- Scenario-based ("A technician...", "A user reports...")\n- 4 answer options (A/B/C/D), one correct, distractors plausible\n- CompTIA exam style\n\nReturn ONLY valid JSON, no markdown:\n{"scenario":"optional setup","question":"the question","options":["A. option","B. option","C. option","D. option"],"correct":0,"explanation":"full explanation","topic":"2-4 word topic"}`;const text=await completeViaProxy(prompt);const q=parseJSONFromModel(text);if(!q.question||!q.options||q.options.length!==4||q.correct===undefined)throw new Error('Invalid format');if(q.topic)quizState.usedTopics.push(q.topic);return q;}
 function renderQuestion(q,opts){opts=opts||{};const area=document.getElementById('q-area');let html='';if(opts.aiBankFallback&&!quizState._aiFallbackBannerShown){quizState._aiFallbackBannerShown=true;const hint=(opts.aiError&&String(opts.aiError).slice(0,280))||'';const esc=h=>h.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');const errLine=hint?`<div class="ai-fallback-detail"><strong>Details:</strong> ${esc(hint)}</div>`:'';html+=`<div class="ai-fallback-banner" role="status"><div>Live AI did not return a usable question. Using built-in questions for this quiz.</div>${errLine}<div class="ai-fallback-hint">Check: Worker URL saved (click <strong>Save proxy settings</strong>), shared secret matches <code>PROXY_SECRET</code> if you use one, <code>wrangler secret put GROQ_API_KEY</code> on the worker, and browser DevTools → Console for errors.</div></div>`;}html+=`<div class="q-card"><div class="q-num-badge">Question ${quizState.currentQ+1} of ${quizState.totalQ}</div>`;if(q.scenario&&q.scenario.trim())html+=`<div class="q-scenario">${q.scenario}</div>`;html+=`<div class="q-text">${q.question}</div><div class="options">`;const letters=['A','B','C','D'];q.options.forEach((opt,i)=>{const txt=opt.replace(/^[A-D]\.\s*/,'');html+=`<button class="opt" onclick="answer(${i},${q.correct})" data-idx="${i}"><span class="opt-let">${letters[i]}</span><span>${txt}</span></button>`;});html+=`</div><button type="button" class="ask-tutor-btn" onclick="askAboutCurrentQuestion()">Ask about this question</button></div>`;area.innerHTML=html;area.dataset.q=JSON.stringify(q);}
-function answer(chosen,correct){if(quizState.answered)return;quizState.answered=true;document.querySelectorAll('.opt').forEach((btn,i)=>{btn.disabled=true;if(i===correct)btn.classList.add('correct');else if(i===chosen)btn.classList.add('incorrect');else btn.classList.add('revealed');});const isCorrect=chosen===correct;if(isCorrect)quizState.correct++;else quizState.wrong++;updateScore();const area=document.getElementById('q-area');const q=JSON.parse(area.dataset.q);const letters=['A','B','C','D'];const expDiv=document.createElement('div');expDiv.className='exp-card';expDiv.innerHTML=`<div class="exp-hdr"><span class="res-badge ${isCorrect?'c':'i'}">${isCorrect?'✓ Correct':'✗ Incorrect'}</span><span style="color:var(--muted);font-size:12px">${isCorrect?'Great work!':'Correct: '+letters[correct]}</span></div><div class="exp-txt">${q.explanation}</div>`;area.appendChild(expDiv);const nextBtn=document.createElement('button');nextBtn.className='next-btn';nextBtn.textContent=quizState.currentQ+1>=quizState.totalQ?'VIEW RESULTS →':'NEXT QUESTION →';nextBtn.onclick=()=>{quizState.currentQ++;loadQuestion();};area.appendChild(nextBtn);}
+function normalizeOptionText(opt){return String(opt||'').replace(/^[A-D]\.\s*/,'').trim();}
+function normalizeTextForMatch(t){return String(t||'').toLowerCase().replace(/<[^>]+>/g,' ').replace(/[^a-z0-9 ]+/g,' ').replace(/\s+/g,' ').trim();}
+function buildSafeExplanation(q,chosen,correct){
+  const letters=['A','B','C','D'];
+  const raw=String(q&&q.explanation||'').trim();
+  const correctText=normalizeOptionText((q&&q.options&&q.options[correct])||'');
+  const chosenText=normalizeOptionText((q&&q.options&&q.options[chosen])||'');
+  if(!raw){
+    return `<strong>Best answer: ${letters[correct]}.</strong> ${correctText}`;
+  }
+  const rawNorm=normalizeTextForMatch(raw);
+  const correctNorm=normalizeTextForMatch(correctText);
+  const chosenNorm=normalizeTextForMatch(chosenText);
+  const mentionsWrongChosen=chosen!==correct&&chosenNorm&&rawNorm.includes(chosenNorm)&&(!correctNorm||!rawNorm.includes(correctNorm));
+  const declared=raw.match(/\b(correct(?:\s+answer)?|answer)\s*[:\-]?\s*([A-D])\b/i);
+  const declaresDifferent=declared&&declared[2]&&letters.indexOf(declared[2].toUpperCase())!==correct;
+  if(mentionsWrongChosen||declaresDifferent){
+    return `<strong>Best answer: ${letters[correct]}.</strong> ${correctText}<br><br>This option best matches the scenario and expected troubleshooting flow.`;
+  }
+  return raw;
+}
+function answer(chosen,correct){if(quizState.answered)return;quizState.answered=true;document.querySelectorAll('.opt').forEach((btn,i)=>{btn.disabled=true;if(i===correct)btn.classList.add('correct');else if(i===chosen)btn.classList.add('incorrect');else btn.classList.add('revealed');});const isCorrect=chosen===correct;if(isCorrect)quizState.correct++;else quizState.wrong++;updateScore();const area=document.getElementById('q-area');const q=JSON.parse(area.dataset.q);const letters=['A','B','C','D'];const safeExp=buildSafeExplanation(q,chosen,correct);const expDiv=document.createElement('div');expDiv.className='exp-card';expDiv.innerHTML=`<div class="exp-hdr"><span class="res-badge ${isCorrect?'c':'i'}">${isCorrect?'✓ Correct':'✗ Incorrect'}</span><span style="color:var(--muted);font-size:12px">${isCorrect?'Great work!':'Correct: '+letters[correct]}</span></div><div class="exp-txt">${safeExp}</div>`;area.appendChild(expDiv);const nextBtn=document.createElement('button');nextBtn.className='next-btn';nextBtn.textContent=quizState.currentQ+1>=quizState.totalQ?'VIEW RESULTS →':'NEXT QUESTION →';nextBtn.onclick=()=>{quizState.currentQ++;loadQuestion();};area.appendChild(nextBtn);}
 function showFinal(){document.getElementById('score-display').style.display='none';quizState.inProgress=false;showQScreen('s-final');const pct=Math.round((quizState.correct/quizState.totalQ)*100);let grade,gradeClass,fb;if(pct>=90){grade='A';gradeClass='gA';fb='Exceptional! You have a thorough command of this material. You\'re exam-ready.';}else if(pct>=80){grade='B';gradeClass='gB';fb='Strong performance! Review sections you hesitated on and push toward 90%+ before exam day.';}else if(pct>=70){grade='C';gradeClass='gC';fb='Good foundation, but gaps remain. Target the sections you struggled with using focused section mode.';}else if(pct>=60){grade='D';gradeClass='gDF';fb='More revision needed. Go back through notes section by section using flashcard mode too.';}else{grade='F';gradeClass='gDF';fb='Don\'t give up — use the flashcard mode to drill key terms, then retry the quiz section by section.';}
 document.getElementById('final-grade').textContent=grade;document.getElementById('final-grade').className='final-grade '+gradeClass;document.getElementById('final-pct').textContent=pct+'%';document.getElementById('f-correct').textContent=quizState.correct;document.getElementById('f-wrong').textContent=quizState.wrong;document.getElementById('f-total').textContent=quizState.totalQ;document.getElementById('final-fb').textContent=fb;}
 function resetToMenu(){document.querySelectorAll('.sec-card').forEach(c=>c.classList.remove('selected'));quizState.selSection=null;document.getElementById('start-btn').disabled=true;document.getElementById('score-display').style.display='none';updateModeIndicator();showQScreen('s-module');}
